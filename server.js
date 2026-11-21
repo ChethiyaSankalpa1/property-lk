@@ -14,7 +14,8 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://chethiyasankalpa456_db_user:FVz2OxSzcN5ExIZz@cluster0.hwhei7q.mongodb.net/property_lk?retryWrites=true&w=majority";
 

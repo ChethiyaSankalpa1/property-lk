@@ -11,7 +11,8 @@ import {
   HelpCircle,
   Database,
   Globe,
-  Copy
+  Copy,
+  Server
 } from 'lucide-react';
 import { useProperties } from '../../context/PropertyContext';
 import { useAdminAuth } from '../../context/AdminAuthContext';
@@ -20,6 +21,8 @@ export default function AdminSettings() {
   const { 
     cloudinaryConfig, 
     updateCloudinaryConfig, 
+    backendUrl,
+    updateBackendUrl,
     properties, 
     exportData, 
     importData, 
@@ -27,6 +30,10 @@ export default function AdminSettings() {
   } = useProperties();
 
   const { updatePin, securityDisclaimer } = useAdminAuth();
+
+  // Backend state
+  const [customBackend, setCustomBackend] = useState(backendUrl || '');
+  const [backendSaved, setBackendSaved] = useState(false);
 
   // Cloudinary form state
   const [cloudName, setCloudName] = useState(cloudinaryConfig.cloudName || '');
@@ -41,6 +48,13 @@ export default function AdminSettings() {
   // Import JSON state
   const [importStatus, setImportStatus] = useState('');
   const [copiedGlobalJson, setCopiedGlobalJson] = useState(false);
+
+  const handleSaveBackend = (e) => {
+    e.preventDefault();
+    updateBackendUrl(customBackend);
+    setBackendSaved(true);
+    setTimeout(() => setBackendSaved(false), 3000);
+  };
 
   const handleSaveCloudinary = (e) => {
     e.preventDefault();
@@ -105,8 +119,58 @@ export default function AdminSettings() {
           Settings & Integrations
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          Configure Cloudinary unsigned image uploads, global listings sync, or update admin credentials.
+          Connect your dedicated Render backend, configure Cloudinary, or backup your listings.
         </p>
+      </div>
+
+      {/* Render Backend Connection Card */}
+      <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/90 shadow-sm space-y-5">
+        <div className="flex items-center space-x-3 border-b border-slate-100 pb-4">
+          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+            <Server className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="font-serif text-lg font-bold text-navy-950">
+              Dedicated Backend Connection (Render.com)
+            </h2>
+            <p className="text-xs text-slate-500">
+              Connect a 24/7 Node.js backend hosted on Render to synchronize all listings worldwide.
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSaveBackend} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              Render Backend URL
+            </label>
+            <input
+              type="url"
+              placeholder="e.g. https://property-lk-backend.onrender.com (or leave empty to use Vercel default)"
+              value={customBackend}
+              onChange={(e) => setCustomBackend(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-slate-50 text-[11px] text-slate-500 leading-relaxed border border-slate-100">
+            <strong>How to host on Render.com:</strong> Go to render.com &rarr; New Web Service &rarr; Select your GitHub repo (`ChethiyaSankalpa1/property-lk`) &rarr; Start command: `npm start` &rarr; Deploy &rarr; Paste your Render URL above!
+          </div>
+
+          {backendSaved && (
+            <div className="p-3 rounded-xl bg-emerald-50 text-emerald-800 text-xs font-bold flex items-center space-x-1.5">
+              <Check className="w-4 h-4 text-emerald-600" />
+              <span>Backend URL connected and synchronized!</span>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs uppercase tracking-wider transition-colors"
+          >
+            Connect Backend
+          </button>
+        </form>
       </div>
 
       {/* Global Sync Card */}
@@ -117,17 +181,13 @@ export default function AdminSettings() {
           </div>
           <div>
             <h2 className="font-serif text-lg font-bold text-white">
-              Make Listings Visible to ALL Customers Worldwide
+              Global Website Listings
             </h2>
             <p className="text-xs text-slate-300">
-              You currently have <strong className="text-emerald-400 font-bold">{properties.length} listings</strong> in your browser.
+              You currently have <strong className="text-emerald-400 font-bold">{properties.length} listings</strong> loaded.
             </p>
           </div>
         </div>
-
-        <p className="text-xs text-slate-300 leading-relaxed">
-          Because this is a serverless frontend site, you can publish your listings to every customer on any phone or computer by clicking <strong>"Copy All Listings JSON"</strong> and pasting it into the project (or sending it to your AI assistant to commit).
-        </p>
 
         <div className="flex flex-wrap items-center gap-3 pt-1">
           <button
@@ -145,15 +205,6 @@ export default function AdminSettings() {
             <Download className="w-4 h-4 text-emerald-400" />
             <span>Download .JSON File</span>
           </button>
-        </div>
-      </div>
-
-      {/* Security Notice */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-900 text-xs leading-relaxed flex items-start space-x-3">
-        <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-        <div>
-          <strong className="block text-amber-800 text-sm mb-0.5">Frontend Prototype Disclaimer:</strong>
-          {securityDisclaimer}
         </div>
       </div>
 

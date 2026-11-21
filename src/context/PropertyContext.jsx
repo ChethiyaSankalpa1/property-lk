@@ -5,6 +5,7 @@ const PropertyContext = createContext();
 
 const STORAGE_KEY = 'property_lk_listings';
 const CLOUDINARY_CONFIG_KEY = 'property_lk_cloudinary_config';
+const BACKEND_URL_KEY = 'property_lk_backend_url';
 
 export const PropertyProvider = ({ children }) => {
   // 1. Initial State from LocalStorage cache
@@ -24,6 +25,11 @@ export const PropertyProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [dbConnected, setDbConnected] = useState(false);
 
+  // Backend URL (e.g. from Render or Vercel default)
+  const [backendUrl, setBackendUrl] = useState(() => {
+    return localStorage.getItem(BACKEND_URL_KEY) || import.meta.env.VITE_API_URL || '';
+  });
+
   // Cloudinary settings
   const [cloudinaryConfig, setCloudinaryConfig] = useState(() => {
     try {
@@ -38,13 +44,36 @@ export const PropertyProvider = ({ children }) => {
     };
   });
 
-  // 2. Fetch live properties & MERGE so local admin additions are NEVER lost
-  const fetchFromDatabase = async () => {
+  const getApiEndpoint = () => {
+    if (backendUrl && backendUrl.trim()) {
+      return `${backendUrl.trim().replace(/\/$/, '')}/api/properties`;
+    }
+    return '/api/properties';
+  };
+
+  const updateBackendUrl = (url) => {
+    const cleaned = url.trim().replace(/\/$/, '');
+    setBackendUrl(cleaned);
+    try {
+      if (cleaned) {
+        localStorage.setItem(BACKEND_URL_KEY, cleaned);
+      } else {
+        localStorage.removeItem(BACKEND_URL_KEY);
+      }
+    } catch (e) {}
+    fetchFromDatabase(cleaned);
+  };
+
+  // 2. Fetch live properties & MERGE
+  const fetchFromDatabase = async (customUrl) => {
     setIsLoading(true);
     let remoteData = [];
+    const endpoint = customUrl 
+      ? `${customUrl.replace(/\/$/, '')}/api/properties` 
+      : getApiEndpoint();
 
     try {
-      const res = await fetch('/api/properties');
+      const res = await fetch(endpoint);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
@@ -53,7 +82,7 @@ export const PropertyProvider = ({ children }) => {
         }
       }
     } catch (err) {
-      console.warn('API error, falling back to listings.json', err);
+      console.warn('Backend fetch error, falling back to listings.json', err);
     }
 
     if (remoteData.length === 0) {
@@ -68,16 +97,15 @@ export const PropertyProvider = ({ children }) => {
       } catch (e) {}
     }
 
-    // MERGE logic: Keep every property from local storage AND remote database
     setProperties(prev => {
       const propertyMap = new Map();
 
-      // First add remote properties
+      // Remote properties
       remoteData.forEach(p => {
         if (p && p.id) propertyMap.set(p.id, p);
       });
 
-      // Then merge local properties (local edits take priority and newly added items are preserved!)
+      // Local properties
       prev.forEach(p => {
         if (p && p.id) {
           const existingRemote = propertyMap.get(p.id);
@@ -86,18 +114,6 @@ export const PropertyProvider = ({ children }) => {
       });
 
       const mergedList = Array.from(propertyMap.values());
-
-      // If there are local properties not yet saved in MongoDB, auto-sync them to MongoDB
-      const remoteIds = new Set(remoteData.map(r => r.id));
-      prev.forEach(localItem => {
-        if (!remoteIds.has(localItem.id)) {
-          fetch('/api/properties', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(localItem)
-          }).catch(() => {});
-        }
-      });
 
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedList));
@@ -127,7 +143,7 @@ export const PropertyProvider = ({ children }) => {
     } catch (err) {}
   };
 
-  // 3. Add Property (Saves to MongoDB Atlas & Local State)
+  // 3. Add Property
   const addProperty = async (newProperty) => {
     const timestamp = Date.now();
     const referenceId = `PLK-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -148,18 +164,16 @@ export const PropertyProvider = ({ children }) => {
         : ['https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80']
     };
 
-    // Update UI immediately (optimistic UI)
     setProperties(prev => [propertyWithMeta, ...prev.filter(p => p.id !== propertyWithMeta.id)]);
 
-    // Save to MongoDB Atlas via /api/properties
     try {
-      await fetch('/api/properties', {
+      await fetch(getApiEndpoint(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(propertyWithMeta)
       });
     } catch (err) {
-      console.warn('Saved locally, will sync to MongoDB when online.', err);
+      console.warn('Saved locally, will sync to backend when online.', err);
     }
 
     return propertyWithMeta;
@@ -181,13 +195,13 @@ export const PropertyProvider = ({ children }) => {
     }));
 
     try {
-      await fetch('/api/properties', {
+      await fetch(getApiEndpoint(), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...updatedData })
       });
     } catch (err) {
-      console.warn('Updated locally, will sync to MongoDB when online.', err);
+      console.warn('Updated locally.', err);
     }
   };
 
@@ -196,7 +210,7 @@ export const PropertyProvider = ({ children }) => {
     setProperties(prev => prev.filter(item => item.id !== id));
 
     try {
-      await fetch(`/api/properties?id=${encodeURIComponent(id)}`, {
+      await fetch(`${getApiEndpoint()}?id=${encodeURIComponent(id)}`, {
         method: 'DELETE'
       });
     } catch (err) {
@@ -219,7 +233,7 @@ export const PropertyProvider = ({ children }) => {
     ));
 
     try {
-      await fetch('/api/properties', {
+      await fetch(getApiEndpoint(), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, isFeatured: newFeatured })
@@ -238,7 +252,7 @@ export const PropertyProvider = ({ children }) => {
     ));
 
     try {
-      await fetch('/api/properties', {
+      await fetch(getApiEndpoint(), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, isSold: newSold })
@@ -251,7 +265,6 @@ export const PropertyProvider = ({ children }) => {
     const cloudName = cloudinaryConfig.cloudName;
     const uploadPreset = cloudinaryConfig.uploadPreset;
 
-    // First compress the image so it's ultra-lightweight (~70KB instead of 10MB)
     let optimizedDataUrl = null;
     try {
       optimizedDataUrl = await compressImage(file, 1280, 960, 0.75);
@@ -260,7 +273,6 @@ export const PropertyProvider = ({ children }) => {
     }
 
     if (!cloudName || !uploadPreset) {
-      // Return the real compressed photo directly!
       return {
         url: optimizedDataUrl || URL.createObjectURL(file),
         isLocalFallback: true,
@@ -268,7 +280,6 @@ export const PropertyProvider = ({ children }) => {
       };
     }
 
-    // Direct unsigned upload to Cloudinary
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', uploadPreset);
@@ -290,7 +301,6 @@ export const PropertyProvider = ({ children }) => {
         publicId: data.public_id
       };
     } catch (err) {
-      // Graceful fallback to real compressed photo if Cloudinary fails
       return {
         url: optimizedDataUrl,
         isLocalFallback: true,
@@ -318,10 +328,9 @@ export const PropertyProvider = ({ children }) => {
       const parsed = JSON.parse(jsonString);
       if (Array.isArray(parsed)) {
         setProperties(parsed);
-        // Save to MongoDB
         for (const item of parsed) {
           try {
-            await fetch('/api/properties', {
+            await fetch(getApiEndpoint(), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(item)
@@ -346,6 +355,8 @@ export const PropertyProvider = ({ children }) => {
       properties,
       isLoading,
       dbConnected,
+      backendUrl,
+      updateBackendUrl,
       fetchFromDatabase,
       addProperty,
       updateProperty,
