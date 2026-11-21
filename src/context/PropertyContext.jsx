@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { compressImage } from '../utils/imageCompressor';
 
 const PropertyContext = createContext();
@@ -24,8 +24,12 @@ export const PropertyProvider = ({ children }) => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [dbConnected, setDbConnected] = useState(false);
+  const [lastSyncedTime, setLastSyncedTime] = useState(Date.now());
 
-  // Backend URL (e.g. from Render or Vercel default)
+  // Cross-tab broadcast channel for instant 0ms sync across tabs
+  const broadcastRef = useRef(null);
+
+  // Backend URL
   const [backendUrl, setBackendUrl] = useState(() => {
     return localStorage.getItem(BACKEND_URL_KEY) || import.meta.env.VITE_API_URL || '';
   });
@@ -82,7 +86,7 @@ export const PropertyProvider = ({ children }) => {
         }
       }
     } catch (err) {
-      console.warn('Backend fetch error, falling back to listings.json', err);
+      // Fallback
     }
 
     if (remoteData.length === 0) {
@@ -122,12 +126,73 @@ export const PropertyProvider = ({ children }) => {
       return mergedList;
     });
 
+    setLastSyncedTime(Date.now());
     setIsLoading(false);
   };
 
+  // REAL-TIME AUTO SYNC ENGINE:
   useEffect(() => {
+    // A. Initial fetch
     fetchFromDatabase();
-  }, []);
+
+    // B. Setup BroadcastChannel for 0-second instant sync between browser tabs & windows
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        broadcastRef.current = new BroadcastChannel('property_lk_realtime');
+        broadcastRef.current.onmessage = (event) => {
+          if (event.data?.type === 'SYNC_PROPERTIES') {
+            fetchFromDatabase();
+          }
+        };
+      }
+    } catch (e) {}
+
+    // C. Listen to cross-tab localStorage changes
+    const handleStorageChange = (e) => {
+      if (e.key === STORAGE_KEY && e.newValue) {
+        try {
+          const updated = JSON.parse(e.newValue);
+          if (Array.isArray(updated)) {
+            setProperties(updated);
+          }
+        } catch (err) {}
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    // D. Auto re-fetch on window focus / tab switch
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible') {
+        fetchFromDatabase();
+      }
+    };
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+
+    // E. Background Polling (Silently re-syncs every 12 seconds so users see new properties live!)
+    const pollingInterval = setInterval(() => {
+      fetchFromDatabase();
+    }, 12000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      clearInterval(pollingInterval);
+      if (broadcastRef.current) {
+        broadcastRef.current.close();
+      }
+    };
+  }, [backendUrl]);
+
+  // Helper to notify other open tabs
+  const broadcastSync = () => {
+    try {
+      if (broadcastRef.current) {
+        broadcastRef.current.postMessage({ type: 'SYNC_PROPERTIES', timestamp: Date.now() });
+      }
+    } catch (e) {}
+  };
 
   // Sync to localStorage
   useEffect(() => {
@@ -165,6 +230,7 @@ export const PropertyProvider = ({ children }) => {
     };
 
     setProperties(prev => [propertyWithMeta, ...prev.filter(p => p.id !== propertyWithMeta.id)]);
+    broadcastSync();
 
     try {
       await fetch(getApiEndpoint(), {
@@ -172,6 +238,7 @@ export const PropertyProvider = ({ children }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(propertyWithMeta)
       });
+      broadcastSync();
     } catch (err) {
       console.warn('Saved locally, will sync to backend when online.', err);
     }
@@ -193,6 +260,7 @@ export const PropertyProvider = ({ children }) => {
       }
       return item;
     }));
+    broadcastSync();
 
     try {
       await fetch(getApiEndpoint(), {
@@ -200,6 +268,7 @@ export const PropertyProvider = ({ children }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...updatedData })
       });
+      broadcastSync();
     } catch (err) {
       console.warn('Updated locally.', err);
     }
@@ -208,11 +277,13 @@ export const PropertyProvider = ({ children }) => {
   // 5. Delete Property
   const deleteProperty = async (id) => {
     setProperties(prev => prev.filter(item => item.id !== id));
+    broadcastSync();
 
     try {
       await fetch(`${getApiEndpoint()}?id=${encodeURIComponent(id)}`, {
         method: 'DELETE'
       });
+      broadcastSync();
     } catch (err) {
       console.warn('Deleted locally.', err);
     }
@@ -231,6 +302,7 @@ export const PropertyProvider = ({ children }) => {
     setProperties(prev => prev.map(p => 
       p.id === id ? { ...p, isFeatured: newFeatured, updatedAt: new Date().toISOString() } : p
     ));
+    broadcastSync();
 
     try {
       await fetch(getApiEndpoint(), {
@@ -238,6 +310,7 @@ export const PropertyProvider = ({ children }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, isFeatured: newFeatured })
       });
+      broadcastSync();
     } catch (err) {}
   };
 
@@ -250,6 +323,7 @@ export const PropertyProvider = ({ children }) => {
     setProperties(prev => prev.map(p => 
       p.id === id ? { ...p, isSold: newSold, updatedAt: new Date().toISOString() } : p
     ));
+    broadcastSync();
 
     try {
       await fetch(getApiEndpoint(), {
@@ -257,6 +331,7 @@ export const PropertyProvider = ({ children }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, isSold: newSold })
       });
+      broadcastSync();
     } catch (err) {}
   };
 
@@ -328,6 +403,7 @@ export const PropertyProvider = ({ children }) => {
       const parsed = JSON.parse(jsonString);
       if (Array.isArray(parsed)) {
         setProperties(parsed);
+        broadcastSync();
         for (const item of parsed) {
           try {
             await fetch(getApiEndpoint(), {
@@ -337,6 +413,7 @@ export const PropertyProvider = ({ children }) => {
             });
           } catch (e) {}
         }
+        broadcastSync();
         return { success: true, count: parsed.length };
       }
       return { success: false, message: 'Invalid JSON format: Expected an array of properties.' };
@@ -348,6 +425,7 @@ export const PropertyProvider = ({ children }) => {
   const clearAllProperties = () => {
     setProperties([]);
     localStorage.removeItem(STORAGE_KEY);
+    broadcastSync();
   };
 
   return (
@@ -355,6 +433,7 @@ export const PropertyProvider = ({ children }) => {
       properties,
       isLoading,
       dbConnected,
+      lastSyncedTime,
       backendUrl,
       updateBackendUrl,
       fetchFromDatabase,
