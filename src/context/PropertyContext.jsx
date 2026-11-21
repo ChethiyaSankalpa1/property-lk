@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { compressImage } from '../utils/imageCompressor';
 
 const PropertyContext = createContext();
 
@@ -245,45 +246,57 @@ export const PropertyProvider = ({ children }) => {
     } catch (err) {}
   };
 
-  // Cloudinary Upload
+  // 8. Image Upload with Automatic Lightweight Compression
   const uploadImageToCloudinary = async (file) => {
     const cloudName = cloudinaryConfig.cloudName;
     const uploadPreset = cloudinaryConfig.uploadPreset;
 
-    if (!cloudName || !uploadPreset) {
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          resolve({
-            url: reader.result,
-            isLocalFallback: true,
-            message: 'Preview mode: Configure Cloudinary in Admin Settings for cloud hosting.'
-          });
-        };
-        reader.readAsDataURL(file);
-      });
+    // First compress the image so it's ultra-lightweight (~70KB instead of 10MB)
+    let optimizedDataUrl = null;
+    try {
+      optimizedDataUrl = await compressImage(file, 1280, 960, 0.75);
+    } catch (compressErr) {
+      console.warn('Compression fallback', compressErr);
     }
 
+    if (!cloudName || !uploadPreset) {
+      // Return the real compressed photo directly!
+      return {
+        url: optimizedDataUrl || URL.createObjectURL(file),
+        isLocalFallback: true,
+        message: 'Saved real photo using optimized web compression.'
+      };
+    }
+
+    // Direct unsigned upload to Cloudinary
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', uploadPreset);
 
-    const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-      method: 'POST',
-      body: formData,
-    });
+    try {
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+        method: 'POST',
+        body: formData,
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || 'Failed to upload image to Cloudinary');
+      if (!response.ok) {
+        throw new Error('Cloudinary error, using compressed image fallback');
+      }
+
+      const data = await response.json();
+      return {
+        url: data.secure_url || data.url,
+        isLocalFallback: false,
+        publicId: data.public_id
+      };
+    } catch (err) {
+      // Graceful fallback to real compressed photo if Cloudinary fails
+      return {
+        url: optimizedDataUrl,
+        isLocalFallback: true,
+        message: 'Saved real photo locally.'
+      };
     }
-
-    const data = await response.json();
-    return {
-      url: data.secure_url || data.url,
-      isLocalFallback: false,
-      publicId: data.public_id
-    };
   };
 
   // Backup & Restore
