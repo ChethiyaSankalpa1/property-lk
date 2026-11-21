@@ -33,7 +33,7 @@ export default function AddEditProperty() {
 
   const [formData, setFormData] = useState({
     title: '',
-    category: 'Houses',
+    category: 'Lands',
     district: 'Colombo',
     city: '',
     price: '',
@@ -55,6 +55,13 @@ export default function AddEditProperty() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Category classification helpers
+  const categoryLower = (formData.category || '').toLowerCase();
+  const isLand = categoryLower.includes('land');
+  const isAntique = categoryLower.includes('antique');
+  const showBedroomsBathrooms = !isLand && !isAntique;
+  const showLandSize = !isAntique;
 
   // If editing, load existing property
   useEffect(() => {
@@ -133,7 +140,6 @@ export default function AddEditProperty() {
     e.target.value = '';
   };
 
-  // Drag and drop handlers
   const handleDragOver = (e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -152,7 +158,6 @@ export default function AddEditProperty() {
     }
   };
 
-  // Bulk URL paste (multiple URLs separated by new lines or commas)
   const handleAddBulkUrls = (e) => {
     e.preventDefault();
     if (!bulkUrls.trim()) return;
@@ -173,17 +178,13 @@ export default function AddEditProperty() {
     }
   };
 
-  // Quick preset photos pack for testing
   const handleAddSamplePack = () => {
     const samplePack = [
       'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
       'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80',
       'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=1200&q=80',
       'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80'
+      'https://images.unsplash.com/photo-1613977257363-707ba9348227?auto=format&fit=crop&w=1200&q=80'
     ];
 
     setFormData(prev => ({
@@ -192,7 +193,6 @@ export default function AddEditProperty() {
     }));
   };
 
-  // Set any image as primary cover photo
   const handleSetCover = (index) => {
     setFormData(prev => {
       const selected = prev.images[index];
@@ -221,22 +221,27 @@ export default function AddEditProperty() {
     e.preventDefault();
 
     if (!formData.title.trim()) {
-      alert('Please enter a property title');
+      alert('Please enter a listing title');
       return;
     }
 
-    const payload = {
+    // Clean data according to category: Lands don't have bedrooms/bathrooms!
+    const cleanedPayload = {
       ...formData,
       price: Number(formData.price) || 0,
+      bedrooms: showBedroomsBathrooms ? formData.bedrooms : '',
+      bathrooms: showBedroomsBathrooms ? formData.bathrooms : '',
+      houseSize: isLand ? '' : formData.houseSize,
+      landSize: isAntique ? '' : formData.landSize,
       images: formData.images.length > 0 
         ? formData.images 
         : ['https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80']
     };
 
     if (isEditing) {
-      updateProperty(id, payload);
+      updateProperty(id, cleanedPayload);
     } else {
-      addProperty(payload);
+      addProperty(cleanedPayload);
     }
 
     setSaveSuccess(true);
@@ -262,7 +267,7 @@ export default function AddEditProperty() {
               {isEditing ? 'Edit Listing' : 'Add New Listing'}
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Support for multiple photos (5, 10, or more images), specifications, and pricing privacy.
+              Specific fields for Houses, Lands, Antique Items, Villas, Hotels, or Bars.
             </p>
           </div>
         </div>
@@ -289,7 +294,7 @@ export default function AddEditProperty() {
       {/* Main Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         
-        {/* Card 1: Basic Information */}
+        {/* Card 1: Title, Category & Location */}
         <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/90 shadow-sm space-y-5">
           <h2 className="font-serif text-lg font-bold text-navy-950 border-b border-slate-100 pb-3">
             1. Title, Category & Location
@@ -303,7 +308,7 @@ export default function AddEditProperty() {
               type="text"
               name="title"
               required
-              placeholder="e.g. Luxury 4-Bedroom Architect-Designed Villa in Thalpe, Galle"
+              placeholder={isLand ? "e.g. Prime 20 Perches Residential Land in Malabe" : "e.g. Luxury 4-Bedroom Villa in Thalpe, Galle"}
               value={formData.title}
               onChange={handleChange}
               className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:outline-none focus:border-emerald-500 focus:bg-white"
@@ -346,10 +351,10 @@ export default function AddEditProperty() {
               </select>
             </div>
 
-            {/* City / Specific Location */}
+            {/* City */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                City / Neighborhood
+                City / Specific Area
               </label>
               <input
                 type="text"
@@ -399,10 +404,8 @@ export default function AddEditProperty() {
               </span>
             </div>
 
-            {/* Checkbox Options: Hide Price & Negotiable */}
+            {/* Checkbox Options */}
             <div className="space-y-3 pt-2">
-              
-              {/* SPECIFIC USER REQUIREMENT: HIDE PRICE ON REQUEST */}
               <label className="flex items-start space-x-3 p-3 rounded-xl bg-slate-50 border border-slate-200 cursor-pointer hover:bg-slate-100/70 transition-colors">
                 <input
                   type="checkbox"
@@ -417,12 +420,11 @@ export default function AddEditProperty() {
                     <span>Hide Price / "Price on Request"</span>
                   </span>
                   <span className="text-[11px] text-slate-500 block leading-tight mt-0.5">
-                    Customers will only see images, location, details & specifications. No price will be listed publicly, prompting buyers to inquire directly on WhatsApp.
+                    Customers will only see photos, location & specifications. Prompts buyers to message you directly on WhatsApp.
                   </span>
                 </div>
               </label>
 
-              {/* Price Negotiable Toggle */}
               <label className="flex items-center space-x-3 px-3 py-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -435,84 +437,103 @@ export default function AddEditProperty() {
                   Mark as Price Negotiable
                 </span>
               </label>
-
             </div>
 
           </div>
         </div>
 
-        {/* Card 3: Specifications */}
+        {/* Card 3: Dynamic Specifications (Bedrooms ONLY for houses/villas, NEVER for Land!) */}
         <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/90 shadow-sm space-y-5">
           <h2 className="font-serif text-lg font-bold text-navy-950 border-b border-slate-100 pb-3">
-            3. Specifications & Description
+            3. {isLand ? 'Land Extent & Details' : isAntique ? 'Antique Specifications' : 'Specifications & Details'}
           </h2>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                Bedrooms
-              </label>
-              <input
-                type="number"
-                name="bedrooms"
-                placeholder="e.g. 4"
-                value={formData.bedrooms}
-                onChange={handleChange}
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:outline-none focus:border-emerald-500"
-              />
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            
+            {/* Bedrooms (ONLY for Houses, Villas, Apartments) */}
+            {showBedroomsBathrooms && (
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Bedrooms
+                </label>
+                <input
+                  type="number"
+                  name="bedrooms"
+                  placeholder="e.g. 4"
+                  value={formData.bedrooms}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            )}
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                Bathrooms
-              </label>
-              <input
-                type="number"
-                name="bathrooms"
-                placeholder="e.g. 3"
-                value={formData.bathrooms}
-                onChange={handleChange}
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:outline-none focus:border-emerald-500"
-              />
-            </div>
+            {/* Bathrooms (ONLY for Houses, Villas, Apartments) */}
+            {showBedroomsBathrooms && (
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Bathrooms
+                </label>
+                <input
+                  type="number"
+                  name="bathrooms"
+                  placeholder="e.g. 3"
+                  value={formData.bathrooms}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            )}
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                Land Size
-              </label>
-              <input
-                type="text"
-                name="landSize"
-                placeholder="e.g. 15 Perches / 2 Acres"
-                value={formData.landSize}
-                onChange={handleChange}
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:outline-none focus:border-emerald-500"
-              />
-            </div>
+            {/* Land Size (For Land, Houses, Villas) */}
+            {showLandSize && (
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Land Extent <span className="text-slate-400 font-normal">(Perches / Acres)</span>
+                </label>
+                <input
+                  type="text"
+                  name="landSize"
+                  placeholder="e.g. 20 Perches / 2.5 Acres"
+                  value={formData.landSize}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            )}
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                House / Dimensions
-              </label>
-              <input
-                type="text"
-                name="houseSize"
-                placeholder="e.g. 3,200 sqft"
-                value={formData.houseSize}
-                onChange={handleChange}
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:outline-none focus:border-emerald-500"
-              />
-            </div>
+            {/* House Size or Dimensions (For Houses, Antiques) */}
+            {!isLand && (
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  {isAntique ? 'Item Dimensions / Height x Width' : 'House / Floor Size (sqft)'}
+                </label>
+                <input
+                  type="text"
+                  name="houseSize"
+                  placeholder={isAntique ? "e.g. Height: 7ft, Width: 4ft" : "e.g. 3,200 sqft"}
+                  value={formData.houseSize}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            )}
+
           </div>
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              Full Property / Item Description
+              Full Description & Specifications
             </label>
             <textarea
               name="description"
               rows={5}
-              placeholder="Provide complete description: road access, deed status, water/electricity connections, nearby amenities, architecture, condition, or provenance..."
+              placeholder={
+                isLand 
+                  ? "Describe road frontage width, access road, water & electricity connections, soil/slope, clear deed status..."
+                  : isAntique 
+                  ? "Describe historical period, wood type (Calamander, Teak, Ebony), carvings, authenticity, provenance..."
+                  : "Detail house layout, kitchen, parking, garden, security, surroundings, clear deed status..."
+              }
               value={formData.description}
               onChange={handleChange}
               className="w-full p-4 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:outline-none focus:border-emerald-500"
@@ -549,7 +570,7 @@ export default function AddEditProperty() {
           </div>
         </div>
 
-        {/* Card 4: MULTI-IMAGE GALLERY MANAGEMENT (5, 10, or more images) */}
+        {/* Card 4: Photography */}
         <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/90 shadow-sm space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-3 gap-2">
             <div>
@@ -560,7 +581,7 @@ export default function AddEditProperty() {
                 </span>
               </h2>
               <p className="text-xs text-slate-500">
-                Add 5, 10, or more high-resolution photos for this item. Drag & drop or select multiple files.
+                Upload 5, 10, or more real photos for this item. Drag & drop or select multiple files.
               </p>
             </div>
 
@@ -576,7 +597,6 @@ export default function AddEditProperty() {
             )}
           </div>
 
-          {/* Multiple File Upload & Drag-and-Drop Area */}
           <div 
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -617,10 +637,9 @@ export default function AddEditProperty() {
                 type="button"
                 onClick={handleAddSamplePack}
                 className="inline-flex items-center space-x-1.5 px-4 py-3 rounded-xl bg-navy-950 hover:bg-navy-900 text-white font-semibold text-xs transition-colors"
-                title="Add 8 high-res showcase photos in one click"
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>Quick Add 8 Photos Pack</span>
+                <span>Add 5 Photos Pack</span>
               </button>
             </div>
 
@@ -640,18 +659,15 @@ export default function AddEditProperty() {
             )}
           </div>
 
-          {/* Bulk URL Paste Input */}
+          {/* Bulk URL Paste */}
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
             <span className="block text-xs font-bold text-navy-950 mb-1">
               Or Paste Multiple Image URLs (Bulk)
             </span>
-            <span className="block text-[11px] text-slate-400 mb-2">
-              Paste multiple image links separated by new lines or commas:
-            </span>
             <div className="space-y-2">
               <textarea
                 rows={2}
-                placeholder="https://example.com/photo1.jpg&#10;https://example.com/photo2.jpg&#10;https://example.com/photo3.jpg"
+                placeholder="https://example.com/photo1.jpg&#10;https://example.com/photo2.jpg"
                 value={bulkUrls}
                 onChange={(e) => setBulkUrls(e.target.value)}
                 className="w-full p-2.5 rounded-xl bg-white border border-slate-200 text-xs font-mono focus:outline-none focus:border-emerald-500"
@@ -678,7 +694,7 @@ export default function AddEditProperty() {
           {formData.images.length > 0 ? (
             <div className="space-y-2 pt-2">
               <div className="flex items-center justify-between text-xs text-slate-500">
-                <span>The first photo is the <strong>Primary Cover Photo</strong> shown on listing cards.</span>
+                <span>The first photo is the <strong>Primary Cover Photo</strong>.</span>
                 <span className="font-semibold text-emerald-700">{formData.images.length} photos ready</span>
               </div>
 
@@ -692,7 +708,6 @@ export default function AddEditProperty() {
                   >
                     <img src={imgUrl} alt="" className="w-full h-full object-cover" />
                     
-                    {/* Index & Cover Badge */}
                     <div className="absolute top-1.5 left-1.5 flex items-center space-x-1">
                       <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-navy-950/80 text-white backdrop-blur-sm">
                         #{index + 1}
@@ -705,14 +720,12 @@ export default function AddEditProperty() {
                       )}
                     </div>
 
-                    {/* Image Action Buttons Overlay */}
                     <div className="absolute inset-0 bg-navy-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 p-1">
                       {index !== 0 && (
                         <button
                           type="button"
                           onClick={() => handleSetCover(index)}
                           className="px-2 py-1 rounded bg-emerald-500 text-navy-950 text-[10px] font-bold hover:bg-emerald-400"
-                          title="Set as Main Cover Photo"
                         >
                           Make Cover
                         </button>
@@ -722,7 +735,6 @@ export default function AddEditProperty() {
                         type="button"
                         onClick={() => handleRemoveImage(index)}
                         className="p-1.5 rounded bg-red-600 text-white text-[10px] hover:bg-red-700"
-                        title="Delete photo"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -733,7 +745,7 @@ export default function AddEditProperty() {
             </div>
           ) : (
             <div className="p-4 rounded-xl bg-slate-50 text-center text-xs text-slate-400">
-              No photos added yet. Upload 5, 10, or more photos above or use the "Quick Add 8 Photos Pack".
+              No photos added yet.
             </div>
           )}
         </div>
@@ -751,7 +763,7 @@ export default function AddEditProperty() {
             type="submit"
             className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-navy-950 font-bold text-xs uppercase tracking-wider shadow-glow-emerald hover:shadow-xl transition-all"
           >
-            {isEditing ? 'Save Changes' : `Publish Listing with ${formData.images.length} Photos`}
+            {isEditing ? 'Save Changes' : `Publish ${formData.category} Listing`}
           </button>
         </div>
 
@@ -772,10 +784,9 @@ export default function AddEditProperty() {
               Preview Mode • {formData.images.length} Photos
             </span>
             <h2 className="font-serif text-xl font-bold text-navy-950 mb-4">
-              {formData.title || 'Untitled Property'}
+              {formData.title || 'Untitled Listing'}
             </h2>
 
-            {/* Feature Image & Gallery preview */}
             <div className="aspect-[16/10] rounded-2xl overflow-hidden bg-navy-950 mb-3">
               <img
                 src={formData.images[0] || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'}
@@ -784,15 +795,6 @@ export default function AddEditProperty() {
               />
             </div>
 
-            {formData.images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
-                {formData.images.map((img, idx) => (
-                  <img key={idx} src={img} alt="" className="w-16 h-12 rounded-lg object-cover shrink-0 border" />
-                ))}
-              </div>
-            )}
-
-            {/* Price display */}
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 mb-4">
               <span className="text-xs uppercase text-slate-500 font-semibold block">
                 {formData.hidePrice ? 'Price Status' : 'Selling Price'}
@@ -809,12 +811,11 @@ export default function AddEditProperty() {
               </div>
             </div>
 
-            {/* Specs */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-slate-600 mb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs text-slate-600 mb-4">
               <div className="p-2 bg-slate-50 rounded-lg">Category: <strong>{formData.category}</strong></div>
               <div className="p-2 bg-slate-50 rounded-lg">District: <strong>{formData.district}</strong></div>
-              <div className="p-2 bg-slate-50 rounded-lg">Beds: <strong>{formData.bedrooms || '-'}</strong></div>
-              <div className="p-2 bg-slate-50 rounded-lg">Baths: <strong>{formData.bathrooms || '-'}</strong></div>
+              {showLandSize && <div className="p-2 bg-slate-50 rounded-lg">Land: <strong>{formData.landSize || '-'}</strong></div>}
+              {showBedroomsBathrooms && <div className="p-2 bg-slate-50 rounded-lg">Beds: <strong>{formData.bedrooms || '-'}</strong></div>}
             </div>
 
             <p className="text-xs text-slate-600 whitespace-pre-line leading-relaxed mb-6">

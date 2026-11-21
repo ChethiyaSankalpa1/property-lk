@@ -28,7 +28,10 @@ import {
   FileCheck2,
   CalendarCheck,
   Eye,
-  CheckCircle2
+  CheckCircle2,
+  Compass,
+  Layers,
+  Ruler
 } from 'lucide-react';
 import { BRAND } from '../constants/brand';
 import { useProperties } from '../context/PropertyContext';
@@ -84,6 +87,14 @@ export default function PropertyDetailsPage() {
 
   const isPriceHidden = Boolean(property.hidePrice);
 
+  // Category classification helpers
+  const categoryLower = (property.category || '').toLowerCase();
+  const isLand = categoryLower.includes('land');
+  const isAntique = categoryLower.includes('antique');
+  const isCommercial = categoryLower.includes('commercial') || categoryLower.includes('shop');
+  const hasBedrooms = !isLand && !isAntique && Number(property.bedrooms) > 0;
+  const hasBathrooms = !isLand && !isAntique && Number(property.bathrooms) > 0;
+
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
@@ -112,7 +123,7 @@ export default function PropertyDetailsPage() {
 
   // WhatsApp inspection booking link
   const createInspectionLink = () => {
-    const text = `Hello PROPERTY LK,\n\nI would like to schedule an on-site inspection/viewing for this property:\n- Title: ${property.title}\n- Ref: #${property.referenceId || property.id}\n- Location: ${property.city ? `${property.city}, ` : ''}${property.district}\n\nPlease let me know available dates and times.`;
+    const text = `Hello PROPERTY LK,\n\nI would like to schedule an on-site viewing for this ${property.category || 'listing'}:\n- Title: ${property.title}\n- Ref: #${property.referenceId || property.id}\n- Location: ${property.city ? `${property.city}, ` : ''}${property.district}\n\nPlease let me know available dates and times.`;
     return BRAND.createWhatsAppLink(text);
   };
 
@@ -159,10 +170,10 @@ export default function PropertyDetailsPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Main Grid: Gallery & Details on Left, Sticky Action Panel on Right */}
+        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Left Column (2 Cols on desktop): Gallery + Information */}
+          {/* Left Column: Gallery + Information */}
           <div className="lg:col-span-2 space-y-8">
             
             {/* Animated Multi-Image Gallery */}
@@ -267,7 +278,6 @@ export default function PropertyDetailsPage() {
                   </span>
                 </div>
 
-                {/* Google Maps link */}
                 <a
                   href={googleMapsUrl}
                   target="_blank"
@@ -316,11 +326,13 @@ export default function PropertyDetailsPage() {
                 ) : null}
               </div>
 
-              {/* Key Specifications Grid */}
+              {/* Smart Details Grid tailored to Asset Type */}
               <div>
                 <h3 className="font-serif text-lg font-bold text-navy-950 mb-3 flex items-center space-x-2">
                   <Building2 className="w-4 h-4 text-emerald-600" />
-                  <span>Property & Land Details</span>
+                  <span>
+                    {isLand ? 'Land & Plot Details' : isAntique ? 'Antique Item Specifications' : 'Property Specifications'}
+                  </span>
                 </h3>
                 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
@@ -345,8 +357,8 @@ export default function PropertyDetailsPage() {
                     </span>
                   </div>
 
-                  {/* Land Size */}
-                  {property.landSize ? (
+                  {/* Land Size (ONLY for Land / House / Villa / Hotel, NEVER for Antique) */}
+                  {!isAntique && property.landSize ? (
                     <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
                       <span className="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
                         Land Extent
@@ -357,11 +369,11 @@ export default function PropertyDetailsPage() {
                     </div>
                   ) : null}
 
-                  {/* House Size */}
-                  {property.houseSize ? (
+                  {/* House / Item Dimensions (ONLY for Houses / Villas or Antiques, NEVER for bare Land!) */}
+                  {!isLand && property.houseSize ? (
                     <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
                       <span className="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
-                        House / Dimensions
+                        {isAntique ? 'Item Dimensions' : 'House / Floor Size'}
                       </span>
                       <span className="font-bold text-navy-950 text-sm truncate block">
                         {property.houseSize}
@@ -369,8 +381,8 @@ export default function PropertyDetailsPage() {
                     </div>
                   ) : null}
 
-                  {/* Bedrooms */}
-                  {property.bedrooms ? (
+                  {/* Bedrooms (ONLY for Houses, Villas, Apartments, NEVER FOR LAND!) */}
+                  {hasBedrooms ? (
                     <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
                       <span className="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
                         Bedrooms
@@ -381,8 +393,8 @@ export default function PropertyDetailsPage() {
                     </div>
                   ) : null}
 
-                  {/* Bathrooms */}
-                  {property.bathrooms ? (
+                  {/* Bathrooms (ONLY for Houses, Villas, Apartments, NEVER FOR LAND!) */}
+                  {hasBathrooms ? (
                     <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
                       <span className="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
                         Bathrooms
@@ -393,14 +405,14 @@ export default function PropertyDetailsPage() {
                     </div>
                   ) : null}
 
-                  {/* Deed Status */}
+                  {/* Deed / Provenance Status */}
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
                     <span className="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">
-                      Title Status
+                      {isAntique ? 'Authenticity' : 'Title Status'}
                     </span>
                     <span className="font-bold text-emerald-700 text-sm flex items-center space-x-1">
                       <FileCheck2 className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Clear Deed</span>
+                      <span>{isAntique ? 'Verified Provenance' : 'Clear Deed'}</span>
                     </span>
                   </div>
 
@@ -451,8 +463,6 @@ export default function PropertyDetailsPage() {
 
               {/* Primary WhatsApp Action Buttons */}
               <div className="space-y-3">
-                
-                {/* 1. Main WhatsApp Inquire Button */}
                 <a
                   href={BRAND.createPropertyInquiryLink(property)}
                   target="_blank"
@@ -463,7 +473,6 @@ export default function PropertyDetailsPage() {
                   <span>{isPriceHidden ? 'Inquire Price on WhatsApp' : 'Inquire on WhatsApp'}</span>
                 </a>
 
-                {/* 2. Schedule Inspection Button via WhatsApp */}
                 <a
                   href={createInspectionLink()}
                   target="_blank"
@@ -471,10 +480,9 @@ export default function PropertyDetailsPage() {
                   className="w-full flex items-center justify-center space-x-2 py-3.5 px-4 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold text-xs uppercase tracking-wider transition-colors"
                 >
                   <CalendarCheck className="w-4 h-4 text-emerald-600" />
-                  <span>Book Site / Land Viewing</span>
+                  <span>{isLand ? 'Schedule Land Site Visit' : isAntique ? 'Request Private Viewing' : 'Book Property Inspection'}</span>
                 </a>
 
-                {/* 3. Direct Phone Call Button */}
                 <a
                   href={`tel:${BRAND.phoneRaw}`}
                   className="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl bg-navy-950 hover:bg-navy-900 text-white font-bold text-xs uppercase tracking-wider transition-colors"
@@ -495,7 +503,7 @@ export default function PropertyDetailsPage() {
                 </p>
               </div>
 
-              {/* Location & Quick Summary */}
+              {/* Summary Details */}
               <div className="space-y-2 pt-2 border-t border-slate-100 text-xs text-slate-600">
                 <div className="flex justify-between py-1">
                   <span className="text-slate-500">Location:</span>
