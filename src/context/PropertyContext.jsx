@@ -37,35 +37,75 @@ export const PropertyProvider = ({ children }) => {
     };
   });
 
-  // 2. Fetch live properties from MongoDB Atlas via /api/properties
+  // 2. Fetch live properties & MERGE so local admin additions are NEVER lost
   const fetchFromDatabase = async () => {
     setIsLoading(true);
+    let remoteData = [];
+
     try {
       const res = await fetch('/api/properties');
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data)) {
-          setProperties(data);
+        if (Array.isArray(data) && data.length > 0) {
+          remoteData = data;
           setDbConnected(true);
-          try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-          } catch (e) {}
-        }
-      } else {
-        // Fallback to /listings.json if API is not running locally
-        const fallbackRes = await fetch('/listings.json');
-        if (fallbackRes.ok) {
-          const fallbackData = await fallbackRes.json();
-          if (Array.isArray(fallbackData) && fallbackData.length > 0) {
-            setProperties(prev => prev.length === 0 ? fallbackData : prev);
-          }
         }
       }
     } catch (err) {
-      // Local dev without serverless runner or offline fallback
-    } finally {
-      setIsLoading(false);
+      console.warn('API error, falling back to listings.json', err);
     }
+
+    if (remoteData.length === 0) {
+      try {
+        const fallbackRes = await fetch('/listings.json');
+        if (fallbackRes.ok) {
+          const fallbackData = await fallbackRes.json();
+          if (Array.isArray(fallbackData)) {
+            remoteData = fallbackData;
+          }
+        }
+      } catch (e) {}
+    }
+
+    // MERGE logic: Keep every property from local storage AND remote database
+    setProperties(prev => {
+      const propertyMap = new Map();
+
+      // First add remote properties
+      remoteData.forEach(p => {
+        if (p && p.id) propertyMap.set(p.id, p);
+      });
+
+      // Then merge local properties (local edits take priority and newly added items are preserved!)
+      prev.forEach(p => {
+        if (p && p.id) {
+          const existingRemote = propertyMap.get(p.id);
+          propertyMap.set(p.id, { ...existingRemote, ...p });
+        }
+      });
+
+      const mergedList = Array.from(propertyMap.values());
+
+      // If there are local properties not yet saved in MongoDB, auto-sync them to MongoDB
+      const remoteIds = new Set(remoteData.map(r => r.id));
+      prev.forEach(localItem => {
+        if (!remoteIds.has(localItem.id)) {
+          fetch('/api/properties', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(localItem)
+          }).catch(() => {});
+        }
+      });
+
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedList));
+      } catch (e) {}
+
+      return mergedList;
+    });
+
+    setIsLoading(false);
   };
 
   useEffect(() => {

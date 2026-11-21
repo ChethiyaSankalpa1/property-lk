@@ -30,7 +30,7 @@ import SearchBar from '../components/common/SearchBar';
 export default function HomePage() {
   const { properties } = useProperties();
   const featuredProperties = properties.filter(p => p.isFeatured && !p.isSold);
-  const displayProperties = featuredProperties.length > 0 ? featuredProperties.slice(0, 6) : properties.slice(0, 6);
+  const displayProperties = featuredProperties.length > 0 ? featuredProperties : properties;
 
   return (
     <div className="min-h-screen bg-slate-50">
