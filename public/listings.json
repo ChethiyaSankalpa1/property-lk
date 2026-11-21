@@ -1,5 +1,28 @@
 [
   {
+    "id": "prop_plk_user_8806",
+    "referenceId": "PLK-8806",
+    "title": "sfsfsf",
+    "category": "Houses",
+    "district": "Colombo",
+    "city": "Colombo",
+    "price": 0,
+    "hidePrice": true,
+    "isNegotiable": true,
+    "bedrooms": 3,
+    "bathrooms": 2,
+    "landSize": "10 Perches",
+    "houseSize": "2,000 sqft",
+    "description": "Newly added house property in Colombo district.",
+    "isFeatured": true,
+    "isSold": false,
+    "images": [
+      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80"
+    ],
+    "createdAt": "2026-11-21T08:49:45.540Z"
+  },
+  {
     "id": "prop_plk_001",
     "referenceId": "PLK-1021",
     "title": "Luxury 4-Bedroom Architect-Designed Modern Villa",
