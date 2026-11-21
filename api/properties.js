@@ -89,12 +89,18 @@ export default async function handler(req, res) {
 
     // 4. DELETE PROPERTY (DELETE)
     if (req.method === 'DELETE') {
-      const id = req.query.id || req.body?.id;
+      const id = req.query?.id || req.body?.id;
       if (!id) {
         return res.status(400).json({ error: 'Property id is required for deletion' });
       }
 
-      await collection.deleteOne({ id });
+      await collection.deleteOne({
+        $or: [
+          { id: id },
+          { referenceId: id },
+          { id: String(id) }
+        ]
+      });
       return res.status(200).json({ success: true, id });
     }
 

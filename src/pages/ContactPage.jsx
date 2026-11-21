@@ -61,7 +61,7 @@ export default function ContactPage() {
                 Official WhatsApp
               </span>
               <h3 className="font-serif text-2xl font-bold text-navy-950 mb-2">
-                +94 71 654 5457
+                {BRAND.phone}
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed mb-6">
                 Fastest response for property inquiries, sharing photos, location pins, and booking viewings.
@@ -89,7 +89,7 @@ export default function ContactPage() {
                 Direct Contact Number
               </span>
               <h3 className="font-serif text-2xl font-bold text-navy-950 mb-2">
-                +94 71 654 5457
+                {BRAND.phone}
               </h3>
               <p className="text-xs text-slate-600 leading-relaxed mb-6">
                 Direct voice call line for urgent property consultations and immediate availability checks.
@@ -191,7 +191,7 @@ export default function ContactPage() {
                 className="w-full py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-navy-950 font-bold text-sm uppercase tracking-wider shadow-glow-emerald flex items-center justify-center space-x-2 transition-all"
               >
                 <MessageCircle className="w-5 h-5 fill-navy-950" />
-                <span>Send to WhatsApp (+94 71 654 5457)</span>
+                <span>Send to WhatsApp ({BRAND.phone})</span>
               </button>
             </form>
           </div>

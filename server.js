@@ -128,12 +128,18 @@ app.put('/api/properties', async (req, res) => {
 app.delete('/api/properties', async (req, res) => {
   try {
     const database = await initDb();
-    const id = req.query.id || req.body?.id;
+    const id = req.query?.id || req.body?.id;
     if (!id) {
       return res.status(400).json({ error: 'Property id is required' });
     }
 
-    await database.collection('properties').deleteOne({ id });
+    await database.collection('properties').deleteOne({
+      $or: [
+        { id: id },
+        { referenceId: id },
+        { id: String(id) }
+      ]
+    });
     res.json({ success: true, id });
   } catch (err) {
     console.error('Error deleting property:', err);

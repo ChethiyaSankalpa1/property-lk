@@ -105,7 +105,7 @@ export default function Navbar() {
                 title="Direct WhatsApp contact"
               >
                 <MessageCircle className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400/20" />
-                <span>+94 71 654 5457</span>
+                <span>+94 77 660 0730</span>
               </a>
 
               {/* Sell Property CTA */}
@@ -191,7 +191,7 @@ export default function Navbar() {
                   className="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl bg-navy-900 border border-emerald-500/40 text-emerald-400 font-semibold text-sm hover:bg-navy-850"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  <span>WhatsApp: +94 71 654 5457</span>
+                  <span>WhatsApp: {BRAND.phone}</span>
                 </a>
 
                 <Link

@@ -123,7 +123,7 @@ export default function HomePage() {
               className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 text-sm sm:text-base font-semibold transition-all duration-300"
             >
               <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 fill-emerald-400/20 text-emerald-400" />
-              <span>WhatsApp: +94 71 654 5457</span>
+              <span>WhatsApp: {BRAND.phone}</span>
             </a>
           </motion.div>
 
@@ -541,7 +541,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <span className="block text-xs uppercase tracking-wider text-emerald-700 font-bold">Official WhatsApp</span>
-                    <span className="font-serif text-lg font-bold text-navy-950">+94 71 654 5457</span>
+                    <span className="font-serif text-lg font-bold text-navy-950">{BRAND.phone}</span>
                   </div>
                 </a>
 
@@ -554,7 +554,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <span className="block text-xs uppercase tracking-wider text-slate-500 font-bold">Direct Phone Call</span>
-                    <span className="font-serif text-lg font-bold text-navy-950">+94 71 654 5457</span>
+                    <span className="font-serif text-lg font-bold text-navy-950">{BRAND.phone}</span>
                   </div>
                 </a>
               </div>

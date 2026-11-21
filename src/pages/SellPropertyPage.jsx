@@ -98,7 +98,7 @@ export default function SellPropertyPage() {
           <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
           <div className="leading-relaxed">
             <strong className="text-navy-950 block text-sm mb-0.5">Zero Account Friction & Immediate WhatsApp Routing</strong>
-            You do not need to register an account or remember passwords. Submitting this form opens your official WhatsApp chat with pre-formatted property specs directly sent to our verified desk (+94 71 654 5457).
+            You do not need to register an account or remember passwords. Submitting this form opens your official WhatsApp chat with pre-formatted property specs directly sent to our verified desk ({BRAND.phone}).
           </div>
         </div>
 
@@ -296,7 +296,7 @@ export default function SellPropertyPage() {
               </div>
 
               <div className="text-center text-xs text-slate-400">
-                Submissions open WhatsApp directly with official representative: +94 71 654 5457
+                Submissions open WhatsApp directly with official representative: {BRAND.phone}
               </div>
 
             </form>

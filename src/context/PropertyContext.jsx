@@ -1,20 +1,52 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { compressImage } from '../utils/imageCompressor';
 
 const PropertyContext = createContext();
 
 const STORAGE_KEY = 'property_lk_listings';
+const DELETED_IDS_KEY = 'property_lk_deleted_ids';
 const CLOUDINARY_CONFIG_KEY = 'property_lk_cloudinary_config';
 const BACKEND_URL_KEY = 'property_lk_backend_url';
 
+// Helper to get blacklist of deleted IDs
+const getDeletedIdsSet = () => {
+  try {
+    const saved = localStorage.getItem(DELETED_IDS_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) return new Set(parsed.map(String));
+    }
+  } catch (err) {
+    console.warn('Error reading deleted IDs', err);
+  }
+  return new Set();
+};
+
+const saveDeletedId = (id) => {
+  if (!id) return;
+  try {
+    const set = getDeletedIdsSet();
+    set.add(String(id));
+    localStorage.setItem(DELETED_IDS_KEY, JSON.stringify(Array.from(set)));
+  } catch (err) {}
+};
+
 export const PropertyProvider = ({ children }) => {
-  // 1. Initial State from LocalStorage cache
+  // 1. Initial State from LocalStorage cache with safety filtering
   const [properties, setProperties] = useState(() => {
     try {
+      const deletedSet = getDeletedIdsSet();
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        return Array.isArray(parsed) ? parsed : [];
+        if (Array.isArray(parsed)) {
+          return parsed.filter(p => 
+            p && 
+            p.id && 
+            !deletedSet.has(String(p.id)) && 
+            (!p.referenceId || !deletedSet.has(String(p.referenceId)))
+          );
+        }
       }
     } catch (err) {
       console.error('Failed to parse properties from localStorage', err);
@@ -48,15 +80,15 @@ export const PropertyProvider = ({ children }) => {
     };
   });
 
-  const getApiEndpoint = () => {
+  const getApiEndpoint = useCallback(() => {
     if (backendUrl && backendUrl.trim()) {
       return `${backendUrl.trim().replace(/\/$/, '')}/api/properties`;
     }
     return '/api/properties';
-  };
+  }, [backendUrl]);
 
   const updateBackendUrl = (url) => {
-    const cleaned = url.trim().replace(/\/$/, '');
+    const cleaned = (url || '').trim().replace(/\/$/, '');
     setBackendUrl(cleaned);
     try {
       if (cleaned) {
@@ -68,8 +100,8 @@ export const PropertyProvider = ({ children }) => {
     fetchFromDatabase(cleaned);
   };
 
-  // 2. Fetch live properties & MERGE
-  const fetchFromDatabase = async (customUrl) => {
+  // 2. Fetch live properties & MERGE safely
+  const fetchFromDatabase = useCallback(async (customUrl) => {
     setIsLoading(true);
     let remoteData = [];
     const endpoint = customUrl 
@@ -77,18 +109,21 @@ export const PropertyProvider = ({ children }) => {
       : getApiEndpoint();
 
     try {
-      const res = await fetch(endpoint);
+      const res = await fetch(endpoint, {
+        headers: { 'Accept': 'application/json' }
+      });
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           remoteData = data;
           setDbConnected(true);
         }
       }
     } catch (err) {
-      // Fallback
+      // Offline or network error - continue to local fallback
     }
 
+    // Only fallback to listings.json if DB returned nothing and we haven't deleted everything
     if (remoteData.length === 0) {
       try {
         const fallbackRes = await fetch('/listings.json');
@@ -101,19 +136,23 @@ export const PropertyProvider = ({ children }) => {
       } catch (e) {}
     }
 
+    const deletedSet = getDeletedIdsSet();
+
     setProperties(prev => {
       const propertyMap = new Map();
 
-      // Remote properties
+      // Filter remote data against deleted IDs blacklist and nulls
       remoteData.forEach(p => {
-        if (p && p.id) propertyMap.set(p.id, p);
+        if (p && p.id && !deletedSet.has(String(p.id)) && (!p.referenceId || !deletedSet.has(String(p.referenceId)))) {
+          propertyMap.set(String(p.id), p);
+        }
       });
 
-      // Local properties
-      prev.forEach(p => {
-        if (p && p.id) {
-          const existingRemote = propertyMap.get(p.id);
-          propertyMap.set(p.id, { ...existingRemote, ...p });
+      // Overlay locally saved updates/properties if not deleted
+      (prev || []).forEach(p => {
+        if (p && p.id && !deletedSet.has(String(p.id)) && (!p.referenceId || !deletedSet.has(String(p.referenceId)))) {
+          const existingRemote = propertyMap.get(String(p.id));
+          propertyMap.set(String(p.id), { ...(existingRemote || {}), ...p });
         }
       });
 
@@ -128,51 +167,54 @@ export const PropertyProvider = ({ children }) => {
 
     setLastSyncedTime(Date.now());
     setIsLoading(false);
-  };
+  }, [getApiEndpoint]);
 
   // REAL-TIME AUTO SYNC ENGINE:
   useEffect(() => {
-    // A. Initial fetch
     fetchFromDatabase();
 
-    // B. Setup BroadcastChannel for 0-second instant sync between browser tabs & windows
+    // Setup BroadcastChannel for 0-second instant sync between browser tabs & windows
     try {
       if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
         broadcastRef.current = new BroadcastChannel('property_lk_realtime');
         broadcastRef.current.onmessage = (event) => {
           if (event.data?.type === 'SYNC_PROPERTIES') {
             fetchFromDatabase();
+          } else if (event.data?.type === 'PROPERTY_DELETED' && event.data?.id) {
+            const delId = String(event.data.id);
+            setProperties(prev => (prev || []).filter(item => item && String(item.id) !== delId));
           }
         };
       }
     } catch (e) {}
 
-    // C. Listen to cross-tab localStorage changes
+    // Listen to cross-tab localStorage changes
     const handleStorageChange = (e) => {
       if (e.key === STORAGE_KEY && e.newValue) {
         try {
           const updated = JSON.parse(e.newValue);
           if (Array.isArray(updated)) {
-            setProperties(updated);
+            const deletedSet = getDeletedIdsSet();
+            setProperties(updated.filter(p => p && p.id && !deletedSet.has(String(p.id))));
           }
         } catch (err) {}
       }
     };
     window.addEventListener('storage', handleStorageChange);
 
-    // D. Auto re-fetch on window focus / tab switch
+    // Auto re-fetch on window focus / tab switch
     const handleVisibilityOrFocus = () => {
-      if (document.visibilityState === 'visible') {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
         fetchFromDatabase();
       }
     };
     window.addEventListener('focus', handleVisibilityOrFocus);
     document.addEventListener('visibilitychange', handleVisibilityOrFocus);
 
-    // E. Background Polling (Silently re-syncs every 12 seconds so users see new properties live!)
+    // Background Polling (every 15 seconds)
     const pollingInterval = setInterval(() => {
       fetchFromDatabase();
-    }, 12000);
+    }, 15000);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
@@ -183,21 +225,23 @@ export const PropertyProvider = ({ children }) => {
         broadcastRef.current.close();
       }
     };
-  }, [backendUrl]);
+  }, [fetchFromDatabase]);
 
   // Helper to notify other open tabs
-  const broadcastSync = () => {
+  const broadcastSync = (payload = { type: 'SYNC_PROPERTIES' }) => {
     try {
       if (broadcastRef.current) {
-        broadcastRef.current.postMessage({ type: 'SYNC_PROPERTIES', timestamp: Date.now() });
+        broadcastRef.current.postMessage({ ...payload, timestamp: Date.now() });
       }
     } catch (e) {}
   };
 
-  // Sync to localStorage
+  // Sync state changes to localStorage safely
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(properties));
+      if (Array.isArray(properties)) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(properties));
+      }
     } catch (err) {}
   }, [properties]);
 
@@ -229,7 +273,7 @@ export const PropertyProvider = ({ children }) => {
         : ['https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80']
     };
 
-    setProperties(prev => [propertyWithMeta, ...prev.filter(p => p.id !== propertyWithMeta.id)]);
+    setProperties(prev => [propertyWithMeta, ...(prev || []).filter(p => p && p.id !== propertyWithMeta.id)]);
     broadcastSync();
 
     try {
@@ -240,7 +284,7 @@ export const PropertyProvider = ({ children }) => {
       });
       broadcastSync();
     } catch (err) {
-      console.warn('Saved locally, will sync to backend when online.', err);
+      console.warn('Saved locally, will sync when online.', err);
     }
 
     return propertyWithMeta;
@@ -248,8 +292,8 @@ export const PropertyProvider = ({ children }) => {
 
   // 4. Update Property
   const updateProperty = async (id, updatedData) => {
-    setProperties(prev => prev.map(item => {
-      if (item.id === id) {
+    setProperties(prev => (prev || []).map(item => {
+      if (item && item.id === id) {
         return {
           ...item,
           ...updatedData,
@@ -274,33 +318,52 @@ export const PropertyProvider = ({ children }) => {
     }
   };
 
-  // 5. Delete Property
+  // 5. Delete Property (Bulletproof with Tombstone / Blacklist)
   const deleteProperty = async (id) => {
-    setProperties(prev => prev.filter(item => item.id !== id));
-    broadcastSync();
+    if (!id) return;
+    const strId = String(id);
 
+    // 1. Mark as deleted in permanent blacklist
+    saveDeletedId(strId);
+
+    // 2. Remove from memory and update localStorage immediately
+    setProperties(prev => {
+      const next = (prev || []).filter(item => item && String(item.id) !== strId && String(item.referenceId) !== strId);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+
+    // 3. Broadcast to other tabs instantly
+    broadcastSync({ type: 'PROPERTY_DELETED', id: strId });
+
+    // 4. Remote delete from database
     try {
-      await fetch(`${getApiEndpoint()}?id=${encodeURIComponent(id)}`, {
-        method: 'DELETE'
+      await fetch(`${getApiEndpoint()}?id=${encodeURIComponent(strId)}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: strId })
       });
-      broadcastSync();
     } catch (err) {
-      console.warn('Deleted locally.', err);
+      console.warn('Deleted locally. Remote deletion will sync once connection is restored.', err);
     }
   };
 
   const getPropertyById = (id) => {
-    return properties.find(item => item.id === id || item.referenceId === id);
+    if (!id) return null;
+    const strId = String(id);
+    return (properties || []).find(item => item && (String(item.id) === strId || String(item.referenceId) === strId));
   };
 
   // 6. Toggle Featured
   const toggleFeatured = async (id) => {
-    const item = properties.find(p => p.id === id);
+    const item = (properties || []).find(p => p && p.id === id);
     if (!item) return;
 
     const newFeatured = !item.isFeatured;
-    setProperties(prev => prev.map(p => 
-      p.id === id ? { ...p, isFeatured: newFeatured, updatedAt: new Date().toISOString() } : p
+    setProperties(prev => (prev || []).map(p => 
+      p && p.id === id ? { ...p, isFeatured: newFeatured, updatedAt: new Date().toISOString() } : p
     ));
     broadcastSync();
 
@@ -310,18 +373,17 @@ export const PropertyProvider = ({ children }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, isFeatured: newFeatured })
       });
-      broadcastSync();
     } catch (err) {}
   };
 
   // 7. Toggle Sold
   const toggleSold = async (id) => {
-    const item = properties.find(p => p.id === id);
+    const item = (properties || []).find(p => p && p.id === id);
     if (!item) return;
 
     const newSold = !item.isSold;
-    setProperties(prev => prev.map(p => 
-      p.id === id ? { ...p, isSold: newSold, updatedAt: new Date().toISOString() } : p
+    setProperties(prev => (prev || []).map(p => 
+      p && p.id === id ? { ...p, isSold: newSold, updatedAt: new Date().toISOString() } : p
     ));
     broadcastSync();
 
@@ -331,7 +393,6 @@ export const PropertyProvider = ({ children }) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, isSold: newSold })
       });
-      broadcastSync();
     } catch (err) {}
   };
 
@@ -386,7 +447,7 @@ export const PropertyProvider = ({ children }) => {
 
   // Backup & Restore
   const exportData = () => {
-    const dataStr = JSON.stringify(properties, null, 2);
+    const dataStr = JSON.stringify(properties || [], null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -423,6 +484,9 @@ export const PropertyProvider = ({ children }) => {
   };
 
   const clearAllProperties = () => {
+    (properties || []).forEach(p => {
+      if (p && p.id) saveDeletedId(p.id);
+    });
     setProperties([]);
     localStorage.removeItem(STORAGE_KEY);
     broadcastSync();
@@ -430,7 +494,7 @@ export const PropertyProvider = ({ children }) => {
 
   return (
     <PropertyContext.Provider value={{
-      properties,
+      properties: properties || [],
       isLoading,
       dbConnected,
       lastSyncedTime,

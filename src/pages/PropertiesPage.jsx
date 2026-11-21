@@ -339,7 +339,7 @@ export default function PropertiesPage() {
                 className="inline-flex items-center space-x-1.5 text-emerald-400 font-bold hover:underline pt-1"
               >
                 <MessageCircle className="w-3.5 h-3.5" />
-                <span>+94 71 654 5457</span>
+                <span>{BRAND.phone}</span>
               </a>
             </div>
           </aside>
