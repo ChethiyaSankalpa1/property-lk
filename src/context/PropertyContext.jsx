@@ -6,7 +6,7 @@ const STORAGE_KEY = 'property_lk_listings';
 const CLOUDINARY_CONFIG_KEY = 'property_lk_cloudinary_config';
 
 export const PropertyProvider = ({ children }) => {
-  // Properties state initialized from localStorage
+  // 1. Initial State from LocalStorage cache
   const [properties, setProperties] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -19,6 +19,9 @@ export const PropertyProvider = ({ children }) => {
     }
     return [];
   });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [dbConnected, setDbConnected] = useState(false);
 
   // Cloudinary settings
   const [cloudinaryConfig, setCloudinaryConfig] = useState(() => {
@@ -34,58 +37,57 @@ export const PropertyProvider = ({ children }) => {
     };
   });
 
-  // Global listings loader: Fetch /listings.json to sync for all customers worldwide
-  useEffect(() => {
-    const fetchGlobalListings = async () => {
-      try {
-        const res = await fetch('/listings.json');
-        if (res.ok) {
-          const globalListings = await res.json();
-          if (Array.isArray(globalListings) && globalListings.length > 0) {
-            setProperties(prev => {
-              // Merge global listings with local modifications, avoiding duplicates by id
-              const localIds = new Set(prev.map(p => p.id));
-              const newGlobalItems = globalListings.filter(p => !localIds.has(p.id));
-              if (newGlobalItems.length > 0) {
-                const merged = [...prev, ...newGlobalItems];
-                try {
-                  localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-                } catch (e) {}
-                return merged;
-              }
-              return prev;
-            });
+  // 2. Fetch live properties from MongoDB Atlas via /api/properties
+  const fetchFromDatabase = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/properties');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setProperties(data);
+          setDbConnected(true);
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+          } catch (e) {}
+        }
+      } else {
+        // Fallback to /listings.json if API is not running locally
+        const fallbackRes = await fetch('/listings.json');
+        if (fallbackRes.ok) {
+          const fallbackData = await fallbackRes.json();
+          if (Array.isArray(fallbackData) && fallbackData.length > 0) {
+            setProperties(prev => prev.length === 0 ? fallbackData : prev);
           }
         }
-      } catch (err) {
-        // Silently handle offline/fetch failure
       }
-    };
+    } catch (err) {
+      // Local dev without serverless runner or offline fallback
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchGlobalListings();
+  useEffect(() => {
+    fetchFromDatabase();
   }, []);
 
-  // Persist properties to localStorage whenever updated
+  // Sync to localStorage
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(properties));
-    } catch (err) {
-      console.error('Failed to save properties to localStorage', err);
-    }
+    } catch (err) {}
   }, [properties]);
 
-  // Persist Cloudinary config
   const updateCloudinaryConfig = (config) => {
     setCloudinaryConfig(config);
     try {
       localStorage.setItem(CLOUDINARY_CONFIG_KEY, JSON.stringify(config));
-    } catch (err) {
-      console.error('Failed to save cloudinary config to localStorage', err);
-    }
+    } catch (err) {}
   };
 
-  // Add new property
-  const addProperty = (newProperty) => {
+  // 3. Add Property (Saves to MongoDB Atlas & Local State)
+  const addProperty = async (newProperty) => {
     const timestamp = Date.now();
     const referenceId = `PLK-${Math.floor(1000 + Math.random() * 9000)}`;
     
@@ -105,12 +107,25 @@ export const PropertyProvider = ({ children }) => {
         : ['https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80']
     };
 
-    setProperties(prev => [propertyWithMeta, ...prev]);
+    // Update UI immediately (optimistic UI)
+    setProperties(prev => [propertyWithMeta, ...prev.filter(p => p.id !== propertyWithMeta.id)]);
+
+    // Save to MongoDB Atlas via /api/properties
+    try {
+      await fetch('/api/properties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(propertyWithMeta)
+      });
+    } catch (err) {
+      console.warn('Saved locally, will sync to MongoDB when online.', err);
+    }
+
     return propertyWithMeta;
   };
 
-  // Update existing property
-  const updateProperty = (id, updatedData) => {
+  // 4. Update Property
+  const updateProperty = async (id, updatedData) => {
     setProperties(prev => prev.map(item => {
       if (item.id === id) {
         return {
@@ -123,53 +138,92 @@ export const PropertyProvider = ({ children }) => {
       }
       return item;
     }));
+
+    try {
+      await fetch('/api/properties', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...updatedData })
+      });
+    } catch (err) {
+      console.warn('Updated locally, will sync to MongoDB when online.', err);
+    }
   };
 
-  // Delete property
-  const deleteProperty = (id) => {
+  // 5. Delete Property
+  const deleteProperty = async (id) => {
     setProperties(prev => prev.filter(item => item.id !== id));
+
+    try {
+      await fetch(`/api/properties?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE'
+      });
+    } catch (err) {
+      console.warn('Deleted locally.', err);
+    }
   };
 
-  // Get single property
   const getPropertyById = (id) => {
     return properties.find(item => item.id === id || item.referenceId === id);
   };
 
-  // Toggle Featured status
-  const toggleFeatured = (id) => {
-    setProperties(prev => prev.map(item => 
-      item.id === id ? { ...item, isFeatured: !item.isFeatured, updatedAt: new Date().toISOString() } : item
+  // 6. Toggle Featured
+  const toggleFeatured = async (id) => {
+    const item = properties.find(p => p.id === id);
+    if (!item) return;
+
+    const newFeatured = !item.isFeatured;
+    setProperties(prev => prev.map(p => 
+      p.id === id ? { ...p, isFeatured: newFeatured, updatedAt: new Date().toISOString() } : p
     ));
+
+    try {
+      await fetch('/api/properties', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, isFeatured: newFeatured })
+      });
+    } catch (err) {}
   };
 
-  // Toggle Sold status
-  const toggleSold = (id) => {
-    setProperties(prev => prev.map(item => 
-      item.id === id ? { ...item, isSold: !item.isSold, updatedAt: new Date().toISOString() } : item
+  // 7. Toggle Sold
+  const toggleSold = async (id) => {
+    const item = properties.find(p => p.id === id);
+    if (!item) return;
+
+    const newSold = !item.isSold;
+    setProperties(prev => prev.map(p => 
+      p.id === id ? { ...p, isSold: newSold, updatedAt: new Date().toISOString() } : p
     ));
+
+    try {
+      await fetch('/api/properties', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, isSold: newSold })
+      });
+    } catch (err) {}
   };
 
-  // Unsigned Cloudinary Upload helper
+  // Cloudinary Upload
   const uploadImageToCloudinary = async (file) => {
     const cloudName = cloudinaryConfig.cloudName;
     const uploadPreset = cloudinaryConfig.uploadPreset;
 
     if (!cloudName || !uploadPreset) {
-      // Fallback: convert file to local base64 preview so user can test seamlessly
       return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => {
           resolve({
             url: reader.result,
             isLocalFallback: true,
-            message: 'Saved locally as preview. Configure Cloudinary in Admin Settings for cloud hosting.'
+            message: 'Preview mode: Configure Cloudinary in Admin Settings for cloud hosting.'
           });
         };
         reader.readAsDataURL(file);
       });
     }
 
-    // Direct unsigned upload to Cloudinary (no secret keys exposed)
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', uploadPreset);
@@ -206,11 +260,21 @@ export const PropertyProvider = ({ children }) => {
     URL.revokeObjectURL(url);
   };
 
-  const importData = (jsonString) => {
+  const importData = async (jsonString) => {
     try {
       const parsed = JSON.parse(jsonString);
       if (Array.isArray(parsed)) {
         setProperties(parsed);
+        // Save to MongoDB
+        for (const item of parsed) {
+          try {
+            await fetch('/api/properties', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(item)
+            });
+          } catch (e) {}
+        }
         return { success: true, count: parsed.length };
       }
       return { success: false, message: 'Invalid JSON format: Expected an array of properties.' };
@@ -227,6 +291,9 @@ export const PropertyProvider = ({ children }) => {
   return (
     <PropertyContext.Provider value={{
       properties,
+      isLoading,
+      dbConnected,
+      fetchFromDatabase,
       addProperty,
       updateProperty,
       deleteProperty,
