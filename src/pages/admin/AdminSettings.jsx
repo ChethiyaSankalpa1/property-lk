@@ -9,7 +9,9 @@ import {
   Check, 
   AlertCircle,
   HelpCircle,
-  Database
+  Database,
+  Globe,
+  Copy
 } from 'lucide-react';
 import { useProperties } from '../../context/PropertyContext';
 import { useAdminAuth } from '../../context/AdminAuthContext';
@@ -38,6 +40,7 @@ export default function AdminSettings() {
 
   // Import JSON state
   const [importStatus, setImportStatus] = useState('');
+  const [copiedGlobalJson, setCopiedGlobalJson] = useState(false);
 
   const handleSaveCloudinary = (e) => {
     e.preventDefault();
@@ -80,6 +83,13 @@ export default function AdminSettings() {
     e.target.value = '';
   };
 
+  const handleCopyGlobalJson = () => {
+    const jsonStr = JSON.stringify(properties, null, 2);
+    navigator.clipboard.writeText(jsonStr);
+    setCopiedGlobalJson(true);
+    setTimeout(() => setCopiedGlobalJson(false), 2500);
+  };
+
   const handleClearAll = () => {
     if (window.confirm('Are you sure you want to delete ALL properties in this browser? This cannot be undone unless you have a JSON backup.')) {
       clearAllProperties();
@@ -95,8 +105,47 @@ export default function AdminSettings() {
           Settings & Integrations
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          Configure Cloudinary unsigned image uploads, backup your data, or update admin credentials.
+          Configure Cloudinary unsigned image uploads, global listings sync, or update admin credentials.
         </p>
+      </div>
+
+      {/* Global Sync Card */}
+      <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-emerald-950 via-navy-950 to-navy-900 border border-emerald-500/30 text-white shadow-glass-dark space-y-4">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-500 text-navy-950 flex items-center justify-center font-bold">
+            <Globe className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="font-serif text-lg font-bold text-white">
+              Make Listings Visible to ALL Customers Worldwide
+            </h2>
+            <p className="text-xs text-slate-300">
+              You currently have <strong className="text-emerald-400 font-bold">{properties.length} listings</strong> in your browser.
+            </p>
+          </div>
+        </div>
+
+        <p className="text-xs text-slate-300 leading-relaxed">
+          Because this is a serverless frontend site, you can publish your listings to every customer on any phone or computer by clicking <strong>"Copy All Listings JSON"</strong> and pasting it into the project (or sending it to your AI assistant to commit).
+        </p>
+
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <button
+            onClick={handleCopyGlobalJson}
+            className="inline-flex items-center space-x-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-navy-950 font-bold text-xs uppercase tracking-wider shadow-glow-emerald transition-all"
+          >
+            {copiedGlobalJson ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            <span>{copiedGlobalJson ? 'Listings Copied!' : 'Copy All Listings JSON'}</span>
+          </button>
+
+          <button
+            onClick={exportData}
+            className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-navy-800 hover:bg-navy-700 text-white font-semibold text-xs border border-navy-700 transition-colors"
+          >
+            <Download className="w-4 h-4 text-emerald-400" />
+            <span>Download .JSON File</span>
+          </button>
+        </div>
       </div>
 
       {/* Security Notice */}
@@ -184,7 +233,7 @@ export default function AdminSettings() {
               Data Backup & Restore (JSON)
             </h2>
             <p className="text-xs text-slate-500">
-              Because properties are saved in LocalStorage, export backups to keep your listings safe or transfer between browsers.
+              Export backups to keep your listings safe or transfer between browsers.
             </p>
           </div>
         </div>

@@ -6,7 +6,7 @@ const STORAGE_KEY = 'property_lk_listings';
 const CLOUDINARY_CONFIG_KEY = 'property_lk_cloudinary_config';
 
 export const PropertyProvider = ({ children }) => {
-  // STRICT REQUIREMENT: Initial state is empty array. No fake, sample or generated properties.
+  // Properties state initialized from localStorage
   const [properties, setProperties] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -34,7 +34,38 @@ export const PropertyProvider = ({ children }) => {
     };
   });
 
-  // Persist properties to localStorage
+  // Global listings loader: Fetch /listings.json to sync for all customers worldwide
+  useEffect(() => {
+    const fetchGlobalListings = async () => {
+      try {
+        const res = await fetch('/listings.json');
+        if (res.ok) {
+          const globalListings = await res.json();
+          if (Array.isArray(globalListings) && globalListings.length > 0) {
+            setProperties(prev => {
+              // Merge global listings with local modifications, avoiding duplicates by id
+              const localIds = new Set(prev.map(p => p.id));
+              const newGlobalItems = globalListings.filter(p => !localIds.has(p.id));
+              if (newGlobalItems.length > 0) {
+                const merged = [...prev, ...newGlobalItems];
+                try {
+                  localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+                } catch (e) {}
+                return merged;
+              }
+              return prev;
+            });
+          }
+        }
+      } catch (err) {
+        // Silently handle offline/fetch failure
+      }
+    };
+
+    fetchGlobalListings();
+  }, []);
+
+  // Persist properties to localStorage whenever updated
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(properties));
@@ -67,6 +98,7 @@ export const PropertyProvider = ({ children }) => {
       isFeatured: Boolean(newProperty.isFeatured),
       isSold: Boolean(newProperty.isSold),
       price: Number(newProperty.price) || 0,
+      hidePrice: Boolean(newProperty.hidePrice),
       isNegotiable: Boolean(newProperty.isNegotiable),
       images: Array.isArray(newProperty.images) && newProperty.images.length > 0 
         ? newProperty.images 
@@ -85,7 +117,8 @@ export const PropertyProvider = ({ children }) => {
           ...item,
           ...updatedData,
           updatedAt: new Date().toISOString(),
-          price: Number(updatedData.price !== undefined ? updatedData.price : item.price) || 0
+          price: Number(updatedData.price !== undefined ? updatedData.price : item.price) || 0,
+          hidePrice: Boolean(updatedData.hidePrice !== undefined ? updatedData.hidePrice : item.hidePrice)
         };
       }
       return item;
