@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import {
   Building2,
   MapPin,
@@ -27,11 +27,15 @@ import {
   MAX_IMAGE_BYTES,
   humanFileSize
 } from '../utils/imageValidation';
+import { EASE_ANIME } from '../components/motion/motionVariants';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const createReferenceId = () => `PL-SELL-${Date.now().toString(36).toUpperCase()}`;
 
 export default function SellPropertyPage() {
   const { uploadImageToCloudinary } = useProperties();
+  const reduceMotion = useReducedMotion();
+  const { t, districtLabel, categoryLabel } = useLanguage();
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -92,18 +96,24 @@ export default function SellPropertyPage() {
       let slotsLeft = MAX_CUSTOMER_IMAGES - prev.length;
 
       if (slotsLeft <= 0) {
-        errors.push(`You can upload up to ${MAX_CUSTOMER_IMAGES} photos. Remove a photo to add another.`);
+        errors.push(t('sell.photos.maxReached', { max: MAX_CUSTOMER_IMAGES }));
         return prev;
       }
 
       incoming.forEach((file) => {
         if (slotsLeft <= 0) {
-          errors.push(`Only the first ${MAX_CUSTOMER_IMAGES} photos were added (maximum reached).`);
+          errors.push(t('sell.photos.limitReached', { max: MAX_CUSTOMER_IMAGES }));
           return;
         }
-        const { valid, error } = validateImageFile(file);
+        const { valid, code, sizeBytes, maxSizeBytes } = validateImageFile(file);
         if (!valid) {
-          errors.push(error);
+          errors.push(
+            t(`sell.validation.${code}`, {
+              name: file.name,
+              size: humanFileSize(sizeBytes),
+              max: humanFileSize(maxSizeBytes)
+            })
+          );
           return;
         }
         accepted.push({
@@ -164,19 +174,19 @@ export default function SellPropertyPage() {
     setErrorMsg('');
 
     if (!formData.fullName.trim()) {
-      setErrorMsg('Please enter your full name.');
+      setErrorMsg(t('sell.errors.fullName'));
       return;
     }
     if (!formData.whatsappNumber.trim()) {
-      setErrorMsg('Please provide your WhatsApp contact number.');
+      setErrorMsg(t('sell.errors.whatsapp'));
       return;
     }
     if (!formData.location.trim()) {
-      setErrorMsg('Please provide the location or city where the property is located.');
+      setErrorMsg(t('sell.errors.location'));
       return;
     }
     if (!formData.expectedPrice.trim()) {
-      setErrorMsg('Please state your expected selling price.');
+      setErrorMsg(t('sell.errors.price'));
       return;
     }
 
@@ -246,36 +256,45 @@ export default function SellPropertyPage() {
     <div className="min-h-screen bg-slate-50 pt-24 sm:pt-28 pb-20">
       {/* Header Banner */}
       <div className="bg-navy-950 text-white py-14 px-4 sm:px-6 lg:px-8 border-b border-navy-800 relative overflow-hidden mb-10">
-        <div className="absolute top-0 right-10 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute inset-0 bg-anime-aurora opacity-70 animate-aurora pointer-events-none" aria-hidden="true" />
+        <div className="absolute top-0 right-10 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none animate-floaty-slow" />
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <div className="inline-flex items-center space-x-2 px-3.5 py-1 rounded-full bg-navy-900 border border-emerald-500/30 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-4">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Direct Seller Service</span>
+            <Sparkles className="w-3.5 h-3.5 animate-twinkle" />
+            <span>{t('sell.hero.badge')}</span>
           </div>
           <h1 className="font-serif text-3xl sm:text-5xl font-extrabold tracking-tight mb-4">
-            Sell Your Property in Sri Lanka
+            {t('sell.hero.titlePrefix')} <span className="anime-text-gradient">{t('sell.hero.titleGradient')}</span>{' '}
+            {t('sell.hero.titleSuffix')}
           </h1>
           <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
-            Connect directly with verified property buyers. Add your details and photos below to instantly start an
-            official WhatsApp listing consultation with PROPERTY LK.
+            {t('sell.hero.subtitle')}
           </p>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Transparent Workflow Notice */}
-        <div className="mb-8 p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex items-start space-x-3.5 text-xs text-slate-600">
+        <motion.div
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: reduceMotion ? 0.2 : 0.5, ease: EASE_ANIME }}
+          className="mb-8 p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex items-start space-x-3.5 text-xs text-slate-600"
+        >
           <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
           <div className="leading-relaxed">
-            <strong className="text-navy-950 block text-sm mb-0.5">Zero Account Friction &amp; Immediate WhatsApp Routing</strong>
-            You do not need to register an account or remember passwords. Submitting this form opens your official
-            WhatsApp chat with pre-formatted property specs and your photo links sent to our verified desk
-            ({BRAND.phone}).
+            <strong className="text-navy-950 block text-sm mb-0.5">{t('sell.notice.title')}</strong>
+            {t('sell.notice.body', { phone: BRAND.phone })}
           </div>
-        </div>
+        </motion.div>
 
         {/* Main Submission Form */}
-        <div className="bg-white rounded-3xl p-5 sm:p-10 border border-slate-200/90 shadow-card-luxury">
+        <motion.div
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 22 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: reduceMotion ? 0.2 : 0.55, ease: EASE_ANIME, delay: 0.08 }}
+          className="anime-glow-ring relative bg-white rounded-3xl p-5 sm:p-10 border border-slate-200/90 shadow-card-luxury"
+        >
           {submitted ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
@@ -287,31 +306,33 @@ export default function SellPropertyPage() {
               </div>
 
               <h2 className="font-serif text-2xl sm:text-3xl font-extrabold text-navy-950">
-                Thank you for contacting PROPERTY LK.
+                {t('sell.success.title')}
               </h2>
 
               <p className="text-base sm:text-lg text-emerald-700 font-semibold max-w-md mx-auto">
-                We will contact you through WhatsApp.
+                {t('sell.success.subtitle')}
               </p>
 
               <p className="text-xs sm:text-sm text-slate-500 max-w-lg mx-auto">
-                Listing reference <span className="font-bold text-navy-900">{listingRef}</span>. If your WhatsApp
-                didn&apos;t open automatically, use the button below to send your details again anytime.
+                {t('sell.success.referencePrefix')}
+                <span className="font-bold text-navy-900">{listingRef}</span>
+                {t('sell.success.referenceSuffix')}
               </p>
 
               {sentPhotoCount > 0 && (
                 <p className="text-xs sm:text-sm text-slate-500 max-w-lg mx-auto">
-                  {sentPhotoCount} {sentPhotoCount === 1 ? 'photo link is' : 'photo links are'} included in your
-                  WhatsApp message.
+                  {sentPhotoCount === 1
+                    ? t('sell.success.photoLinksOne', { count: sentPhotoCount })
+                    : t('sell.success.photoLinksOther', { count: sentPhotoCount })}
                 </p>
               )}
 
               {attachedManually && images.length > 0 && (
                 <p className="text-xs sm:text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 max-w-lg mx-auto text-left">
                   <AlertCircle className="w-4 h-4 inline-block -mt-0.5 mr-1.5" />
-                  WhatsApp does not allow a website to attach image files automatically. Your {images.length}{' '}
-                  {images.length === 1 ? 'photo' : 'photos'} {images.length === 1 ? 'is' : 'are'} still ready below -
-                  please tap the attach (📎) button in the WhatsApp chat and add them so we can publish your listing.
+                  {images.length === 1
+                    ? t('sell.success.manualAttachOne', { count: images.length })
+                    : t('sell.success.manualAttachOther', { count: images.length })}
                 </p>
               )}
 
@@ -338,7 +359,7 @@ export default function SellPropertyPage() {
                   className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-navy-950 font-bold text-xs uppercase tracking-wider shadow-glow-emerald"
                 >
                   <MessageCircle className="w-4 h-4 fill-navy-950" />
-                  <span>Open WhatsApp Again</span>
+                  <span>{t('sell.success.openWhatsapp')}</span>
                 </a>
 
                 <button
@@ -346,7 +367,7 @@ export default function SellPropertyPage() {
                   onClick={resetForm}
                   className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider"
                 >
-                  Submit Another Property
+                  {t('sell.success.submitAnother')}
                 </button>
               </div>
             </motion.div>
@@ -363,7 +384,7 @@ export default function SellPropertyPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label htmlFor="fullName" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                    Full Name <span className="text-red-500">*</span>
+                    {t('sell.form.fullName')} <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -373,7 +394,7 @@ export default function SellPropertyPage() {
                       name="fullName"
                       required
                       autoComplete="name"
-                      placeholder="e.g. Kasun Perera"
+                      placeholder={t('sell.placeholders.fullName')}
                       value={formData.fullName}
                       onChange={handleChange}
                       className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-base sm:text-sm font-medium focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
@@ -383,7 +404,7 @@ export default function SellPropertyPage() {
 
                 <div>
                   <label htmlFor="whatsappNumber" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                    WhatsApp Number <span className="text-red-500">*</span>
+                    {t('sell.form.whatsappNumber')} <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -394,7 +415,7 @@ export default function SellPropertyPage() {
                       required
                       inputMode="tel"
                       autoComplete="tel"
-                      placeholder="e.g. +94 77 123 4567"
+                      placeholder={t('sell.placeholders.whatsappNumber')}
                       value={formData.whatsappNumber}
                       onChange={handleChange}
                       className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-base sm:text-sm font-medium focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
@@ -407,7 +428,7 @@ export default function SellPropertyPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label htmlFor="propertyType" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                    Property Type <span className="text-red-500">*</span>
+                    {t('sell.form.propertyType')} <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -420,7 +441,7 @@ export default function SellPropertyPage() {
                     >
                       {PROPERTY_CATEGORIES.map((c) => (
                         <option key={c.id} value={c.singular || c.name}>
-                          {c.name}
+                          {categoryLabel(c.singular || c.name)}
                         </option>
                       ))}
                     </select>
@@ -429,7 +450,7 @@ export default function SellPropertyPage() {
 
                 <div>
                   <label htmlFor="district" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                    District <span className="text-red-500">*</span>
+                    {t('sell.form.district')} <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -442,7 +463,7 @@ export default function SellPropertyPage() {
                     >
                       {SRI_LANKA_DISTRICTS.map((d) => (
                         <option key={d} value={d}>
-                          {d}
+                          {districtLabel(d)}
                         </option>
                       ))}
                     </select>
@@ -454,14 +475,14 @@ export default function SellPropertyPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label htmlFor="location" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                    Location / City <span className="text-red-500">*</span>
+                    {t('sell.form.location')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="location"
                     type="text"
                     name="location"
                     required
-                    placeholder="e.g. Rajagiriya, Negombo Road, Kandy Town"
+                    placeholder={t('sell.placeholders.location')}
                     value={formData.location}
                     onChange={handleChange}
                     className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-base sm:text-sm font-medium focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
@@ -470,7 +491,7 @@ export default function SellPropertyPage() {
 
                 <div>
                   <label htmlFor="expectedPrice" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                    Expected Selling Price (LKR) <span className="text-red-500">*</span>
+                    {t('sell.form.expectedPrice')} <span className="text-red-500">*</span>
                   </label>
                   <input
                     id="expectedPrice"
@@ -478,7 +499,7 @@ export default function SellPropertyPage() {
                     name="expectedPrice"
                     required
                     inputMode="numeric"
-                    placeholder="e.g. 45,000,000 or 4.5 Crore"
+                    placeholder={t('sell.placeholders.expectedPrice')}
                     value={formData.expectedPrice}
                     onChange={handleChange}
                     className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-base sm:text-sm font-medium focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
@@ -490,10 +511,17 @@ export default function SellPropertyPage() {
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                    Property Photos <span className="text-slate-400 normal-case font-medium">(up to {MAX_CUSTOMER_IMAGES})</span>
+                    {t('sell.form.photos')}{' '}
+                    <span className="text-slate-400 normal-case font-medium">
+                      {t('sell.form.photosUpTo', { max: MAX_CUSTOMER_IMAGES })}
+                    </span>
                   </label>
                   <span className="text-[11px] font-semibold text-slate-500">
-                    {images.length}/{MAX_CUSTOMER_IMAGES} added · max {humanFileSize(MAX_IMAGE_BYTES)} each
+                    {t('sell.photos.counter', {
+                      count: images.length,
+                      max: MAX_CUSTOMER_IMAGES,
+                      size: humanFileSize(MAX_IMAGE_BYTES)
+                    })}
                   </span>
                 </div>
 
@@ -501,8 +529,8 @@ export default function SellPropertyPage() {
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
-                  className={`rounded-2xl border-2 border-dashed p-4 sm:p-6 text-center transition-colors ${
-                    isDragging ? 'border-emerald-500 bg-emerald-50/60' : 'border-slate-200 bg-slate-50'
+                  className={`anime-glow-ring rounded-2xl border-2 border-dashed p-4 sm:p-6 text-center transition-all duration-300 ${
+                    isDragging ? 'border-emerald-500 bg-emerald-50/60 scale-[1.01] shadow-glow-emerald' : 'border-slate-200 bg-slate-50'
                   }`}
                 >
                   <input
@@ -512,24 +540,24 @@ export default function SellPropertyPage() {
                     multiple
                     onChange={handleFileInputChange}
                     className="hidden"
-                    aria-label="Select property photos"
+                    aria-label={t('sell.photos.selectAria')}
                   />
 
-                  <div className="w-11 h-11 rounded-2xl bg-white border border-slate-200 text-emerald-600 flex items-center justify-center mx-auto mb-3">
+                  <div className="w-11 h-11 rounded-2xl bg-white border border-slate-200 text-emerald-600 flex items-center justify-center mx-auto mb-3 animate-bobble">
                     <UploadCloud className="w-5 h-5" />
                   </div>
 
                   <button
                     type="button"
                     onClick={() => fileInputRef.current && fileInputRef.current.click()}
-                    className="inline-flex items-center justify-center space-x-2 w-full sm:w-auto px-5 py-3 rounded-xl bg-navy-950 hover:bg-navy-900 text-white font-bold text-xs uppercase tracking-wider transition-colors"
+                    className="anime-shimmer relative inline-flex items-center justify-center space-x-2 w-full sm:w-auto px-5 py-3 rounded-xl bg-navy-950 hover:bg-navy-900 text-white font-bold text-xs uppercase tracking-wider transition-colors"
                   >
                     <Images className="w-4 h-4" />
-                    <span>Choose Photos</span>
+                    <span className="relative z-10">{t('sell.photos.choose')}</span>
                   </button>
 
                   <p className="text-[11px] text-slate-500 mt-3 leading-relaxed">
-                    Tap to open your camera or gallery. JPG, PNG, WEBP, HEIC and AVIF are supported.
+                    {t('sell.photos.hint')}
                   </p>
                 </div>
 
@@ -561,7 +589,7 @@ export default function SellPropertyPage() {
                           {index === 0 && (
                             <span className="absolute bottom-1 left-1 inline-flex items-center space-x-1 px-1.5 py-0.5 rounded-md bg-navy-950/85 text-emerald-400 text-[9px] font-bold uppercase tracking-wide">
                               <Star className="w-2.5 h-2.5 fill-emerald-400" />
-                              <span>Main</span>
+                              <span>{t('sell.photos.main')}</span>
                             </span>
                           )}
 
@@ -577,14 +605,14 @@ export default function SellPropertyPage() {
 
                           {(img.status === 'manual' || img.status === 'error') && (
                             <div className="absolute inset-x-0 bottom-0 bg-amber-500/90 text-navy-950 text-[9px] font-bold px-1 py-0.5 text-center">
-                              Attach in chat
+                              {t('sell.photos.attachInChat')}
                             </div>
                           )}
 
                           <button
                             type="button"
                             onClick={() => removeImage(img.id)}
-                            aria-label={`Remove ${img.name}`}
+                            aria-label={t('sell.photos.removeAria', { name: img.name })}
                             className="absolute top-1 right-1 w-9 h-9 rounded-full bg-navy-950/80 hover:bg-red-600 text-white flex items-center justify-center transition-colors"
                           >
                             <X className="w-4 h-4" />
@@ -598,8 +626,10 @@ export default function SellPropertyPage() {
                 {images.length > 0 && (
                   <p className="text-[11px] text-slate-500 mt-2.5">
                     {slotsLeft > 0
-                      ? `You can add ${slotsLeft} more ${slotsLeft === 1 ? 'photo' : 'photos'}. The first photo is used as the main image.`
-                      : 'Maximum number of photos reached.'}
+                      ? slotsLeft === 1
+                        ? t('sell.photos.moreAvailableOne', { count: slotsLeft })
+                        : t('sell.photos.moreAvailableOther', { count: slotsLeft })
+                      : t('sell.photos.maxReachedNote')}
                   </p>
                 )}
               </div>
@@ -607,13 +637,13 @@ export default function SellPropertyPage() {
               {/* Description */}
               <div>
                 <label htmlFor="description" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                  Property Description &amp; Specifications
+                  {t('sell.form.description')}
                 </label>
                 <textarea
                   id="description"
                   name="description"
                   rows={4}
-                  placeholder="Detail land size in perches, number of bedrooms, house square footage, access road width, water/electricity availability, clear deed details, etc."
+                  placeholder={t('sell.placeholders.description')}
                   value={formData.description}
                   onChange={handleChange}
                   className="w-full p-4 rounded-xl bg-slate-50 border border-slate-200 text-base sm:text-sm font-medium focus:outline-none focus:border-emerald-500 focus:bg-white transition-all"
@@ -622,33 +652,39 @@ export default function SellPropertyPage() {
 
               {/* Submit Button */}
               <div className="pt-2">
-                <button
+                <motion.button
                   type="submit"
                   disabled={isUploading}
-                  className="w-full flex items-center justify-center space-x-2 py-4 px-6 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-navy-950 font-bold text-sm uppercase tracking-wider shadow-glow-emerald hover:shadow-xl transition-all duration-300 hover:scale-[1.01] disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  whileHover={reduceMotion || isUploading ? undefined : { scale: 1.02, y: -2 }}
+                  whileTap={reduceMotion || isUploading ? undefined : { scale: 0.98 }}
+                  transition={{ duration: 0.25, ease: EASE_ANIME }}
+                  className="anime-shimmer relative w-full flex items-center justify-center space-x-2 py-4 px-6 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-navy-950 font-bold text-sm uppercase tracking-wider shadow-glow-emerald hover:shadow-xl transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   {isUploading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>
-                        Uploading photos {uploadProgress.current}/{uploadProgress.total}
+                      <span className="relative z-10">
+                        {t('sell.actions.uploading', {
+                          current: uploadProgress.current,
+                          total: uploadProgress.total
+                        })}
                       </span>
                     </>
                   ) : (
                     <>
                       <Send className="w-4 h-4" />
-                      <span>Submit Property</span>
+                      <span className="relative z-10">{t('sell.actions.submit')}</span>
                     </>
                   )}
-                </button>
+                </motion.button>
               </div>
 
               <div className="text-center text-xs text-slate-400">
-                Submissions open WhatsApp directly with official representative: {BRAND.phone}
+                {t('sell.footer', { phone: BRAND.phone })}
               </div>
             </form>
           )}
-        </div>
+        </motion.div>
       </div>
     </div>
   );

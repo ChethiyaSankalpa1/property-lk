@@ -14,11 +14,14 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { BRAND } from '../../constants/brand';
+import { useLanguage } from '../../i18n/LanguageContext';
+import LanguageSwitcher from '../common/LanguageSwitcher';
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,10 +37,10 @@ export default function Navbar() {
   }, [location.pathname]);
 
   const navLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'Explore Properties', path: '/properties' },
-    { name: 'Sell Your Property', path: '/sell' },
-    { name: 'Contact Us', path: '/contact' },
+    { name: t('nav.home'), path: '/' },
+    { name: t('nav.exploreProperties'), path: '/properties' },
+    { name: t('nav.sellYourProperty'), path: '/sell' },
+    { name: t('nav.contactUs'), path: '/contact' },
   ];
 
   return (
@@ -57,7 +60,7 @@ export default function Navbar() {
               to="/" 
               className="flex items-center space-x-2.5 sm:space-x-3 group select-none"
             >
-              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center shadow-glow-emerald text-navy-950 group-hover:scale-105 transition-transform duration-300">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center shadow-glow-emerald text-navy-950 group-hover:scale-105 group-hover:rotate-6 transition-transform duration-300">
                 <Building className="w-5 h-5 sm:w-6 sm:h-6 text-navy-950 stroke-[2.5]" />
               </div>
               <div className="flex flex-col">
@@ -68,9 +71,10 @@ export default function Navbar() {
                   <span className="font-serif text-lg sm:text-2xl font-extrabold text-emerald-400 drop-shadow-sm">
                     LK
                   </span>
+                  <Sparkles className="w-3.5 h-3.5 text-neon-400 animate-twinkle hidden sm:block" aria-hidden="true" />
                 </div>
                 <span className="text-[10px] tracking-widest uppercase text-slate-400 font-medium hidden sm:block -mt-1">
-                  Sri Lanka Real Estate
+                  {t('nav.brandSubtitle')}
                 </span>
               </div>
             </Link>
@@ -82,9 +86,9 @@ export default function Navbar() {
                   key={link.path}
                   to={link.path}
                   className={({ isActive }) =>
-                    `px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ${
+                    `relative px-3.5 py-1.5 rounded-full text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 ${
                       isActive
-                        ? 'bg-emerald-500 text-navy-950 font-semibold shadow-sm'
+                        ? 'bg-emerald-500 text-navy-950 font-semibold shadow-glow-emerald'
                         : 'text-slate-200 hover:text-white hover:bg-navy-800/60'
                     }`
                   }
@@ -95,14 +99,16 @@ export default function Navbar() {
             </nav>
 
             {/* Right Action Buttons */}
-            <div className="hidden lg:flex items-center space-x-3">
-              {/* WhatsApp Quick CTA */}
+            <div className="hidden md:flex items-center space-x-3">
+              <LanguageSwitcher size="sm" />
+
+              {/* WhatsApp Quick CTA (larger screens only - the nav already carries contact info) */}
               <a
                 href={BRAND.createWhatsAppLink()}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 hover:bg-emerald-500/20 hover:border-emerald-400 transition-all duration-200"
-                title="Direct WhatsApp contact"
+                className="hidden lg:inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-emerald-400 bg-emerald-950/40 border border-emerald-500/30 hover:bg-emerald-500/20 hover:border-emerald-400 transition-all duration-200"
+                title={t('nav.directWhatsapp')}
               >
                 <MessageCircle className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400/20" />
                 <span>{BRAND.phone}</span>
@@ -111,21 +117,23 @@ export default function Navbar() {
               {/* Sell Property CTA */}
               <Link
                 to="/sell"
-                className="inline-flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider text-navy-950 bg-gradient-to-r from-emerald-400 to-emerald-500 hover:from-emerald-300 hover:to-emerald-400 shadow-glow-emerald hover:shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                className="anime-shimmer relative inline-flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider text-navy-950 bg-gradient-to-r from-emerald-400 to-emerald-500 hover:from-emerald-300 hover:to-emerald-400 shadow-glow-emerald hover:shadow-lg transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <PlusCircle className="w-4 h-4 stroke-[2.5]" />
-                <span>Sell Property</span>
+                <span className="relative z-10">{t('nav.sellProperty')}</span>
               </Link>
             </div>
 
             {/* Mobile Menu & Quick Actions Button */}
             <div className="flex items-center space-x-2 md:hidden">
+              <LanguageSwitcher size="sm" showIcon={false} />
+
               <a
                 href={BRAND.createWhatsAppLink()}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors"
-                aria-label="Contact via WhatsApp"
+                aria-label={t('nav.contactViaWhatsapp')}
               >
                 <MessageCircle className="w-5 h-5 fill-emerald-400/20" />
               </a>
@@ -133,7 +141,7 @@ export default function Navbar() {
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="p-2.5 rounded-lg bg-navy-900/80 text-slate-200 border border-navy-800 hover:text-white focus:outline-none"
-                aria-label="Toggle mobile navigation menu"
+                aria-label={t('nav.toggleMenu')}
                 aria-expanded={mobileMenuOpen}
               >
                 {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -151,38 +159,57 @@ export default function Navbar() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.24 }}
             className="fixed inset-x-0 top-[60px] sm:top-[68px] z-40 max-h-[calc(100dvh-60px)] sm:max-h-[calc(100dvh-68px)] overflow-y-auto overscroll-contain bg-navy-950/98 backdrop-blur-xl border-b border-navy-800 shadow-2xl px-5 pt-4 pb-[calc(2rem+env(safe-area-inset-bottom))] md:hidden"
           >
-            <div className="flex flex-col space-y-3">
-              <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold px-2">
-                Navigation
-              </span>
+            <motion.div
+              className="flex flex-col space-y-3"
+              variants={{ hidden: {}, show: { transition: { staggerChildren: 0.05, delayChildren: 0.05 } } }}
+              initial="hidden"
+              animate="show"
+            >
+              <motion.span
+                variants={{ hidden: { opacity: 0, x: -12 }, show: { opacity: 1, x: 0 } }}
+                className="text-xs uppercase tracking-wider text-slate-400 font-semibold px-2"
+              >
+                {t('nav.navigation')}
+              </motion.span>
               
               {navLinks.map((link) => (
-                <NavLink
-                  key={link.path}
-                  to={link.path}
-                  className={({ isActive }) =>
-                    `flex items-center justify-between px-4 py-3 rounded-xl text-base font-medium transition-all ${
-                      isActive
-                        ? 'bg-emerald-500 text-navy-950 font-bold shadow-md'
-                        : 'text-slate-200 hover:bg-navy-900 hover:text-white'
-                    }`
-                  }
-                >
-                  <span>{link.name}</span>
-                  <ChevronRight className="w-4 h-4 opacity-70" />
-                </NavLink>
+                <motion.div key={link.path} variants={{ hidden: { opacity: 0, x: -18 }, show: { opacity: 1, x: 0 } }}>
+                  <NavLink
+                    to={link.path}
+                    className={({ isActive }) =>
+                      `flex items-center justify-between px-4 py-3 rounded-xl text-base font-medium transition-all ${
+                        isActive
+                          ? 'bg-emerald-500 text-navy-950 font-bold shadow-md'
+                          : 'text-slate-200 hover:bg-navy-900 hover:text-white'
+                      }`
+                    }
+                  >
+                    <span>{link.name}</span>
+                    <ChevronRight className="w-4 h-4 opacity-70" />
+                  </NavLink>
+                </motion.div>
               ))}
 
-              <div className="pt-3 border-t border-navy-800/80 flex flex-col space-y-2.5">
+              <motion.div
+                variants={{ hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0 } }}
+                className="pt-3 border-t border-navy-800/80 flex flex-col space-y-2.5"
+              >
+                <div className="flex items-center justify-between px-2 pb-1">
+                  <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold">
+                    {t('common.language.label')}
+                  </span>
+                  <LanguageSwitcher size="sm" />
+                </div>
+
                 <Link
                   to="/sell"
-                  className="w-full flex items-center justify-center space-x-2 py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-navy-950 font-bold text-sm uppercase tracking-wider shadow-glow-emerald"
+                  className="anime-shimmer relative w-full flex items-center justify-center space-x-2 py-3.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-navy-950 font-bold text-sm uppercase tracking-wider shadow-glow-emerald"
                 >
                   <PlusCircle className="w-4 h-4 stroke-[2.5]" />
-                  <span>Sell Your Property</span>
+                  <span className="relative z-10">{t('nav.sellYourProperty')}</span>
                 </Link>
 
                 <a
@@ -192,7 +219,7 @@ export default function Navbar() {
                   className="w-full flex items-center justify-center space-x-2 py-3 px-4 rounded-xl bg-navy-900 border border-emerald-500/40 text-emerald-400 font-semibold text-sm hover:bg-navy-850"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  <span>WhatsApp: {BRAND.phone}</span>
+                  <span>{t('nav.whatsappPhone', { phone: BRAND.phone })}</span>
                 </a>
 
                 <Link
@@ -200,10 +227,10 @@ export default function Navbar() {
                   className="w-full flex items-center justify-center space-x-2 py-2.5 px-4 rounded-xl text-xs text-slate-400 hover:text-slate-200 hover:bg-navy-900/50"
                 >
                   <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Admin Portal (Prototype)</span>
+                  <span>{t('nav.adminPortal')}</span>
                 </Link>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

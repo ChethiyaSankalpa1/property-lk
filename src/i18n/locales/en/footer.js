@@ -1,0 +1,30 @@
+// Footer strings.
+export default {
+  ctaTitle: 'Looking to buy or sell property in Sri Lanka?',
+  ctaSubtitle: 'Connect directly with our team via WhatsApp for instant inquiries and private viewings.',
+  chatOnWhatsapp: 'Chat on WhatsApp',
+  callUs: 'Call Us',
+  about:
+    "Sri Lanka's dedicated real estate marketplace connecting buyers and sellers directly with zero middlemen friction and immediate WhatsApp communication.",
+  bulletVerified: 'Verified Direct Seller Inquiries',
+  bulletDistricts: 'All 25 Sri Lankan Districts Covered',
+  bulletWhatsapp: 'Instant WhatsApp Integration',
+  quickNavigation: 'Quick Navigation',
+  homePage: 'Home Page',
+  browseProperties: 'Browse Properties',
+  sellYourProperty: 'Sell Your Property',
+  contactViewings: 'Contact & Viewings',
+  adminDashboard: 'Admin Dashboard',
+  categories: 'Categories',
+  officialContact: 'Official Contact',
+  whatsappOfficial: 'WhatsApp Official',
+  directCall: 'Direct Call',
+  coverage: 'Sri Lanka • Serving all 25 administrative districts island-wide',
+  transparencyTitle: 'Architecture Transparency:',
+  transparency:
+    "PROPERTY LK is engineered as a clean frontend-only application ready for Vercel deployment. Property listings created via the Admin panel are persisted inside the browser's LocalStorage and are device-specific. Customer submissions trigger direct pre-filled WhatsApp communications with no third-party database dependency.",
+  rights: '© {{year}} PROPERTY LK. All rights reserved.',
+  privacyInquiries: 'Privacy & Inquiries',
+  listingsPolicy: 'Listings Policy',
+  adminAccess: 'Admin Access',
+};

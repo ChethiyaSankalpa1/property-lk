@@ -61,6 +61,10 @@ export const PropertyProvider = ({ children }) => {
   // Cross-tab broadcast channel for instant 0ms sync across tabs
   const broadcastRef = useRef(null);
 
+  // Set once the API reports it has no database attached. Polling such an endpoint
+  // can never return data, so it is stopped for the rest of the session.
+  const dbPollingDisabledRef = useRef(false);
+
   // Backend URL
   const [backendUrl, setBackendUrl] = useState(() => {
     return localStorage.getItem(BACKEND_URL_KEY) || import.meta.env.VITE_API_URL || '';
@@ -112,11 +116,17 @@ export const PropertyProvider = ({ children }) => {
       const res = await fetch(endpoint, {
         headers: { 'Accept': 'application/json' }
       });
+      if (res.headers.get('X-DB-Configured') === 'false') {
+        // Deliberate no-database mode: stop the recurring poll so the request is
+        // not repeated every few seconds. The /listings.json fallback below still runs.
+        dbPollingDisabledRef.current = true;
+      }
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
           remoteData = data;
-          setDbConnected(true);
+          // An empty list from a database-less backend is not a live connection.
+          if (!dbPollingDisabledRef.current) setDbConnected(true);
         }
       }
     } catch (err) {
@@ -204,6 +214,7 @@ export const PropertyProvider = ({ children }) => {
 
     // Auto re-fetch on window focus / tab switch
     const handleVisibilityOrFocus = () => {
+      if (dbPollingDisabledRef.current) return;
       if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
         fetchFromDatabase();
       }
@@ -213,6 +224,7 @@ export const PropertyProvider = ({ children }) => {
 
     // Background Polling (every 15 seconds)
     const pollingInterval = setInterval(() => {
+      if (dbPollingDisabledRef.current) return;
       fetchFromDatabase();
     }, 15000);
 

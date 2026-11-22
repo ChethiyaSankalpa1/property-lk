@@ -3,11 +3,15 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Building2, MessageCircle, PlusCircle, Sparkles, Compass } from 'lucide-react';
 import { BRAND } from '../../constants/brand';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 export default function EmptyState({ title, subtitle, showActions = true }) {
+  const { t } = useLanguage();
+
   return (
     <div className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-navy-900/90 via-navy-950 to-navy-900 border border-navy-800/80 p-8 sm:p-14 lg:p-16 text-center shadow-glass-dark my-8">
       {/* Decorative ambient background glows */}
+      <div className="absolute inset-0 bg-anime-aurora opacity-60 animate-aurora pointer-events-none" aria-hidden="true" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -top-10 -right-10 w-48 h-48 bg-navy-700/20 rounded-full blur-2xl pointer-events-none" />
 
@@ -42,15 +46,23 @@ export default function EmptyState({ title, subtitle, showActions = true }) {
         >
           <Sparkles className="w-5 h-5" />
         </motion.div>
+        <motion.div
+          animate={{ scale: [1, 0.7, 1], opacity: [0.9, 0.4, 0.9] }}
+          transition={{ duration: 3.6, repeat: Infinity, delay: 0.8 }}
+          className="absolute -bottom-1 -left-3 text-sakura-400"
+          aria-hidden="true"
+        >
+          <Sparkles className="w-4 h-4" />
+        </motion.div>
       </div>
 
       {/* Main Title & Subtitle */}
       <motion.h3 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="font-serif text-2xl sm:text-3xl font-bold text-white tracking-wide mb-3"
+        className="anime-text-gradient relative z-10 font-serif text-2xl sm:text-3xl font-bold tracking-wide mb-3"
       >
-        {title || "No Properties Listed Yet"}
+        {title || t('properties.empty.title')}
       </motion.h3>
 
       <motion.p 
@@ -59,7 +71,7 @@ export default function EmptyState({ title, subtitle, showActions = true }) {
         transition={{ delay: 0.1 }}
         className="max-w-xl mx-auto text-sm sm:text-base text-slate-300 leading-relaxed mb-8"
       >
-        {subtitle || "New property opportunities will be available here soon. Stay connected with PROPERTY LK."}
+        {subtitle || t('properties.empty.subtitle')}
       </motion.p>
 
       {/* Action Buttons */}
@@ -68,32 +80,32 @@ export default function EmptyState({ title, subtitle, showActions = true }) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-md mx-auto"
+          className="relative z-10 flex flex-col sm:flex-row items-center justify-center gap-3.5 max-w-md mx-auto"
         >
           <a
             href={BRAND.createWhatsAppLink()}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-navy-950 font-bold text-sm tracking-wide shadow-glow-emerald transition-all duration-300 hover:scale-[1.02]"
+            className="anime-shimmer relative w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-navy-950 font-bold text-sm tracking-wide shadow-glow-emerald transition-all duration-300 hover:scale-[1.02]"
           >
             <MessageCircle className="w-4 h-4 fill-navy-950" />
-            <span>Connect on WhatsApp</span>
+            <span className="relative z-10">{t('properties.empty.connectWhatsapp')}</span>
           </a>
 
           <Link
             to="/sell"
-            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 rounded-xl bg-navy-800/80 hover:bg-navy-800 text-slate-200 hover:text-white font-semibold text-sm border border-navy-700/80 transition-all duration-300"
+            className="anime-shimmer relative w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 rounded-xl bg-navy-800/80 hover:bg-navy-800 text-slate-200 hover:text-white font-semibold text-sm border border-navy-700/80 transition-all duration-300 hover:scale-[1.02]"
           >
             <PlusCircle className="w-4 h-4 text-emerald-400" />
-            <span>List Your Property</span>
+            <span className="relative z-10">{t('properties.empty.listProperty')}</span>
           </Link>
         </motion.div>
       )}
 
       {/* Decorative prompt note */}
-      <div className="mt-8 pt-6 border-t border-navy-800/60 max-w-lg mx-auto flex items-center justify-center space-x-2 text-xs text-slate-400">
+      <div className="relative z-10 mt-8 pt-6 border-t border-navy-800/60 max-w-lg mx-auto flex items-center justify-center space-x-2 text-xs text-slate-400">
         <Compass className="w-3.5 h-3.5 text-emerald-400" />
-        <span>Looking for a specific location or land in Sri Lanka? Message our team directly.</span>
+        <span>{t('properties.empty.prompt')}</span>
       </div>
     </div>
   );

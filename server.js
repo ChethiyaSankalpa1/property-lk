@@ -11,7 +11,9 @@ const PORT = process.env.PORT || 5000;
 // Enable CORS for Vercel and local development
 app.use(cors({
   origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  // Lets the browser read the header that reports whether a database is attached.
+  exposedHeaders: ['X-DB-Configured']
 }));
 
 app.use(express.json({ limit: '50mb' }));
@@ -19,6 +21,23 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Never hardcode credentials here. Create a local .env file with MONGODB_URI=...
 const MONGODB_URI = process.env.MONGODB_URI;
+
+// Without MONGODB_URI the app is still fully usable: the client falls back to the
+// bundled /listings.json. Requests are answered with an empty list (reads) or a
+// 503 (writes) instead of a 500, so an unconfigured database is reported as a
+// deliberate state rather than an internal failure.
+const DB_CONFIGURED = Boolean(MONGODB_URI);
+
+// Returns true when the response has already been sent because no database exists.
+function rejectWithoutDatabase(res) {
+  if (DB_CONFIGURED) return false;
+  res.set('X-DB-Configured', 'false');
+  res.status(503).json({
+    error: 'Database backend is not configured. Changes are stored locally in the browser.',
+    code: 'DB_NOT_CONFIGURED'
+  });
+  return true;
+}
 
 let dbClient = null;
 let db = null;
@@ -45,6 +64,12 @@ app.get('/api/health', (req, res) => {
 
 // GET all properties
 app.get('/api/properties', async (req, res) => {
+  if (!DB_CONFIGURED) {
+    // Nothing to read without a database. An empty list lets the client use its
+    // /listings.json fallback and avoids logging a failed request on every poll.
+    res.set('X-DB-Configured', 'false');
+    return res.json([]);
+  }
   try {
     const database = await initDb();
     const properties = await database.collection('properties').find({}).sort({ createdAt: -1 }).toArray();
@@ -61,6 +86,7 @@ app.get('/api/properties', async (req, res) => {
 
 // POST new property
 app.post('/api/properties', async (req, res) => {
+  if (rejectWithoutDatabase(res)) return;
   try {
     const database = await initDb();
     const property = req.body;
@@ -100,6 +126,7 @@ app.post('/api/properties', async (req, res) => {
 
 // PUT update property
 app.put('/api/properties', async (req, res) => {
+  if (rejectWithoutDatabase(res)) return;
   try {
     const database = await initDb();
     const { id, ...updates } = req.body;
@@ -130,6 +157,7 @@ app.put('/api/properties', async (req, res) => {
 
 // DELETE property
 app.delete('/api/properties', async (req, res) => {
+  if (rejectWithoutDatabase(res)) return;
   try {
     const database = await initDb();
     const id = req.query?.id || req.body?.id;

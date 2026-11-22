@@ -1,0 +1,90 @@
+// Strings for the Property Details page (listing viewer).
+export default {
+  notFound: {
+    title: 'Property Not Found',
+    description:
+      'The property or item you are looking for may have been removed, sold, or the URL reference might be incorrect.',
+    browseAll: 'Browse All Properties',
+    contactWhatsApp: 'Contact on WhatsApp',
+  },
+  backToListings: 'Back to Listings',
+  share: {
+    label: 'Share',
+    copied: 'Link Copied!',
+    shareText: 'Check out this listing on PROPERTY LK: {{title}} (Ref: {{ref}})',
+  },
+  refBadge: 'REF #{{ref}}',
+  badges: {
+    featured: 'Featured',
+    soldOut: 'Sold Out',
+    priceOnRequest: 'Price On Request',
+  },
+  gallery: {
+    imageAlt: '{{title}} - Image {{index}}',
+    thumbnailAlt: 'Thumbnail',
+    previous: 'Previous image',
+    next: 'Next image',
+    counter: '{{current}} / {{total}} Photos',
+  },
+  location: {
+    districtCountry: '{{district}} District, Sri Lanka',
+    viewOnMaps: 'View on Google Maps',
+  },
+  price: {
+    pricingDetails: 'Pricing Details',
+    askingPrice: 'Asking Price (LKR)',
+    onRequest: 'Price on Request',
+    privateOnRequest: 'Private on Request',
+    inquireQuote: 'Inquire For Private Quote',
+    negotiable: 'Price Negotiable',
+  },
+  specs: {
+    titleLand: 'Land & Plot Details',
+    titleAntique: 'Antique Item Specifications',
+    titleProperty: 'Property Specifications',
+    category: 'Category',
+    district: 'District',
+    landExtent: 'Land Extent',
+    itemDimensions: 'Item Dimensions',
+    houseSize: 'House / Floor Size',
+    bedrooms: 'Bedrooms',
+    bedsValue: '{{count}} Beds',
+    bathrooms: 'Bathrooms',
+    bathsValue: '{{count}} Baths',
+    authenticity: 'Authenticity',
+    titleStatus: 'Title Status',
+    verifiedProvenance: 'Verified Provenance',
+    clearDeed: 'Clear Deed',
+    referenceId: 'Reference ID',
+  },
+  description: {
+    heading: 'Full Description & Specifications',
+    fallback:
+      'No full description provided for this listing. Please contact PROPERTY LK on WhatsApp for complete details, authenticity certificates, or viewing arrangements.',
+  },
+  contact: {
+    brandName: 'PROPERTY LK',
+    subtitle: 'Verified Direct Contact Desk',
+    inquirePrice: 'Inquire Price on WhatsApp',
+    inquire: 'Inquire on WhatsApp',
+    scheduleLandVisit: 'Schedule Land Site Visit',
+    requestViewing: 'Request Private Viewing',
+    bookInspection: 'Book Property Inspection',
+    call: 'Call {{phone}}',
+    verificationTitle: 'Direct Inquiry Verification',
+    verificationNoteBefore: 'Mentioning Reference ID',
+    verificationNoteAfter:
+      'when you message or call allows our team to immediately provide current photos, deed verification, and private viewing slots.',
+  },
+  summary: {
+    location: 'Location:',
+    category: 'Category:',
+    pricing: 'Pricing:',
+    photos: 'Photos:',
+    photosValue: '{{count}} available',
+  },
+  lightbox: {
+    close: 'Close full-screen image viewer',
+    imageAlt: 'Full screen view',
+  },
+};

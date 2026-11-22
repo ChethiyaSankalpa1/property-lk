@@ -1,5 +1,10 @@
 import { connectToDatabase } from './db.js';
 
+// Without MONGODB_URI the app still works: the client falls back to the bundled
+// /listings.json. Reads return an empty list and writes return 503, so an
+// unconfigured database is reported as a deliberate state instead of a 500.
+const DB_CONFIGURED = Boolean(process.env.MONGODB_URI);
+
 export default async function handler(req, res) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -9,10 +14,23 @@ export default async function handler(req, res) {
     'Access-Control-Allow-Headers',
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
+  // Lets the browser read the header that reports whether a database is attached.
+  res.setHeader('Access-Control-Expose-Headers', 'X-DB-Configured');
 
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
+  }
+
+  if (!DB_CONFIGURED) {
+    res.setHeader('X-DB-Configured', 'false');
+    if (req.method === 'GET') {
+      return res.status(200).json([]);
+    }
+    return res.status(503).json({
+      error: 'Database backend is not configured. Changes are stored locally in the browser.',
+      code: 'DB_NOT_CONFIGURED'
+    });
   }
 
   try {

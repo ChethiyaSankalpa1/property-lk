@@ -27,10 +27,18 @@ const getExtension = (name = '') => name.split('.').pop().toLowerCase();
 /**
  * Validates a single selected image file.
  * iOS/Android sometimes report an empty mime type, so the file extension is used as a fallback.
+ *
+ * Every result carries a stable `code` (`'ok'`, `'noFile'`, `'unsupportedFormat'`, `'tooLarge'`,
+ * `'empty'`) so callers can localise the message. The English `error` string is kept for callers
+ * that display it directly (e.g. the admin uploader). An optional `opts.maxSizeBytes` lets the
+ * caller override the per-photo size limit; the `tooLarge` result also exposes the raw
+ * `sizeBytes` / `maxSizeBytes` so the caller can format `{{size}}` and `{{max}}` itself.
  */
-export const validateImageFile = (file) => {
+export const validateImageFile = (file, opts = {}) => {
+  const maxSizeBytes = Number.isFinite(opts.maxSizeBytes) ? opts.maxSizeBytes : MAX_IMAGE_BYTES;
+
   if (!file) {
-    return { valid: false, error: 'No file selected.' };
+    return { valid: false, code: 'noFile', error: 'No file selected.' };
   }
 
   const extension = getExtension(file.name);
@@ -40,20 +48,24 @@ export const validateImageFile = (file) => {
   if (!hasValidType && !hasValidExtension) {
     return {
       valid: false,
+      code: 'unsupportedFormat',
       error: `Unsupported format for "${file.name}". Please use JPG, PNG, WEBP, HEIC or AVIF.`
     };
   }
 
-  if (file.size > MAX_IMAGE_BYTES) {
+  if (file.size > maxSizeBytes) {
     return {
       valid: false,
-      error: `"${file.name}" is ${humanFileSize(file.size)}. Maximum allowed size is ${humanFileSize(MAX_IMAGE_BYTES)} per photo.`
+      code: 'tooLarge',
+      error: `"${file.name}" is ${humanFileSize(file.size)}. Maximum allowed size is ${humanFileSize(maxSizeBytes)} per photo.`,
+      sizeBytes: file.size,
+      maxSizeBytes
     };
   }
 
   if (file.size === 0) {
-    return { valid: false, error: `"${file.name}" appears to be empty or unreadable.` };
+    return { valid: false, code: 'empty', error: `"${file.name}" appears to be empty or unreadable.` };
   }
 
-  return { valid: true, error: '' };
+  return { valid: true, code: 'ok', error: '' };
 };

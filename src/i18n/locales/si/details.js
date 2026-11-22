@@ -1,0 +1,90 @@
+// Strings for the Property Details page (listing viewer).
+export default {
+  notFound: {
+    title: 'දේපල හමු නොවීය',
+    description:
+      'ඔබ සොයන දේපල හෝ අයිතමය ඉවත් කර තිබිය හැක, විකිණී තිබිය හැක, නැතහොත් URL යොමුව වැරදි විය හැක.',
+    browseAll: 'සියලු දේපල බලන්න',
+    contactWhatsApp: 'WhatsApp හරහා සම්බන්ධ වන්න',
+  },
+  backToListings: 'දැන්වීම් වෙත ආපසු',
+  share: {
+    label: 'බෙදාගන්න',
+    copied: 'සබැඳිය පිටපත් කළා!',
+    shareText: 'PROPERTY LK හි මෙම දැන්වීම බලන්න: {{title}} (යොමු: {{ref}})',
+  },
+  refBadge: 'යොමු #{{ref}}',
+  badges: {
+    featured: 'විශේෂ',
+    soldOut: 'විකිණී ඇත',
+    priceOnRequest: 'මිල විමසන්න',
+  },
+  gallery: {
+    imageAlt: '{{title}} - ඡායාරූපය {{index}}',
+    thumbnailAlt: 'සිඟිති රූපය',
+    previous: 'පෙර ඡායාරූපය',
+    next: 'ඊළඟ ඡායාරූපය',
+    counter: '{{current}} / {{total}} ඡායාරූප',
+  },
+  location: {
+    districtCountry: '{{district}} දිස්ත්‍රික්කය, ශ්‍රී ලංකාව',
+    viewOnMaps: 'Google Maps හි බලන්න',
+  },
+  price: {
+    pricingDetails: 'මිල විස්තර',
+    askingPrice: 'ඉල්ලන මිල (LKR)',
+    onRequest: 'මිල විමසන්න',
+    privateOnRequest: 'පෞද්ගලිකව විමසන්න',
+    inquireQuote: 'පෞද්ගලික මිල ගණන් විමසන්න',
+    negotiable: 'මිල සාකච්ඡා කළ හැකි',
+  },
+  specs: {
+    titleLand: 'ඉඩම් විස්තර',
+    titleAntique: 'පුරාවස්තු පිරිවිතර',
+    titleProperty: 'දේපල පිරිවිතර',
+    category: 'වර්ගය',
+    district: 'දිස්ත්‍රික්කය',
+    landExtent: 'ඉඩම් ප්‍රමාණය',
+    itemDimensions: 'අයිතමයේ මානයන්',
+    houseSize: 'නිවස / බිම් ප්‍රමාණය',
+    bedrooms: 'නිදන කමර',
+    bedsValue: '{{count}} නිදන කමර',
+    bathrooms: 'නාන කමර',
+    bathsValue: '{{count}} නාන කමර',
+    authenticity: 'සත්‍යතාව',
+    titleStatus: 'හිමිකම් තත්ත්වය',
+    verifiedProvenance: 'තහවුරු කළ ප්‍රභවය',
+    clearDeed: 'පැහැදිලි ඔප්පුව',
+    referenceId: 'යොමු අංකය',
+  },
+  description: {
+    heading: 'සම්පූර්ණ විස්තර සහ පිරිවිතර',
+    fallback:
+      'මෙම දැන්වීම සඳහා සම්පූර්ණ විස්තරයක් ලබා දී නැත. සම්පූර්ණ විස්තර, සත්‍යතා සහතික හෝ නිරීක්ෂණ වෙන් කිරීම් සඳහා WhatsApp හරහා PROPERTY LK අමතන්න.',
+  },
+  contact: {
+    brandName: 'PROPERTY LK',
+    subtitle: 'තහවුරු කළ සෘජු සම්බන්ධතා අංශය',
+    inquirePrice: 'WhatsApp හරහා මිල විමසන්න',
+    inquire: 'WhatsApp හරහා විමසන්න',
+    scheduleLandVisit: 'ඉඩම් නිරීක්ෂණයක් වෙන් කරන්න',
+    requestViewing: 'පෞද්ගලික නිරීක්ෂණයක් ඉල්ලන්න',
+    bookInspection: 'දේපල නිරීක්ෂණයක් වෙන් කරන්න',
+    call: 'අමතන්න {{phone}}',
+    verificationTitle: 'සෘජු විමසුම් තහවුරු කිරීම',
+    verificationNoteBefore: 'යොමු අංකය',
+    verificationNoteAfter:
+      'සඳහන් කිරීමෙන් ඔබ පණිවිඩයක් යවන විට හෝ අමතන විට අපගේ කණ්ඩායමට වහාම නවතම ඡායාරූප, ඔප්පු තහවුරු කිරීම සහ පෞද්ගලික නිරීක්ෂණ කාල සටහන් ලබා දීමට හැකි වේ.',
+  },
+  summary: {
+    location: 'ස්ථානය:',
+    category: 'වර්ගය:',
+    pricing: 'මිල:',
+    photos: 'ඡායාරූප:',
+    photosValue: '{{count}} ක් ඇත',
+  },
+  lightbox: {
+    close: 'සම්පූර්ණ තිර රූප දර්ශකය වසන්න',
+    imageAlt: 'සම්පූර්ණ තිර දර්ශනය',
+  },
+};

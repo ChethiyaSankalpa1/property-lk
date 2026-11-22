@@ -82,6 +82,138 @@
     linear-gradient(to bottom, rgba(16, 185, 129, 0.04) 1px, transparent 1px);
 }
 
+/* ========================================================= */
+/* ANIME-INSPIRED MOTION LAYER                               */
+/* Layered on top of the premium brand styling so the site   */
+/* keeps its identity while gaining expressive motion.       */
+/* ========================================================= */
+
+/* Animated multi-colour gradient text used for emphasis headings */
+.anime-text-gradient {
+  background-image: linear-gradient(90deg, #FF6BAA 0%, #A78BFA 22%, #3DE8F0 44%, #34D399 66%, #FBBF6B 88%, #FF6BAA 100%);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: anime-gradient-pan 9s linear infinite;
+}
+
+/* Slow panning gradient surface (hero washes, CTA bands) */
+.anime-gradient-surface {
+  background-image: linear-gradient(120deg, rgba(255, 107, 170, 0.16), rgba(167, 139, 250, 0.16), rgba(61, 232, 240, 0.16), rgba(52, 211, 153, 0.16), rgba(251, 191, 107, 0.16));
+  background-size: 300% 300%;
+  animation: anime-gradient-pan 16s ease-in-out infinite;
+}
+
+/* Sweeping light that travels across a surface on hover */
+.anime-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.anime-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 25%, rgba(255, 255, 255, 0.45) 50%, transparent 75%);
+  transform: translateX(-130%);
+  pointer-events: none;
+}
+.anime-shimmer:hover::after,
+.anime-shimmer:focus-visible::after {
+  animation: anime-sweep 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Loading placeholder used while photos are fetched */
+.skeleton-shimmer {
+  background: linear-gradient(100deg, rgba(226, 232, 240, 0.6) 30%, rgba(255, 255, 255, 0.95) 50%, rgba(226, 232, 240, 0.6) 70%);
+  background-size: 220% 100%;
+  animation: anime-skeleton 1.5s ease-in-out infinite;
+}
+.skeleton-shimmer-dark {
+  background: linear-gradient(100deg, rgba(30, 48, 102, 0.5) 30%, rgba(61, 94, 181, 0.6) 50%, rgba(30, 48, 102, 0.5) 70%);
+  background-size: 220% 100%;
+  animation: anime-skeleton 1.5s ease-in-out infinite;
+}
+
+/* Hover lift used on cards and tiles */
+.anime-lift {
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.anime-lift:hover {
+  transform: translateY(-6px);
+}
+
+/* Colour-cycling glow ring revealed on hover */
+.anime-glow-ring {
+  transition: box-shadow 0.45s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.45s ease;
+}
+.anime-glow-ring:hover {
+  box-shadow:
+    0 0 0 1px rgba(167, 139, 250, 0.45),
+    0 18px 45px -14px rgba(167, 139, 250, 0.4),
+    0 10px 30px -14px rgba(255, 107, 170, 0.32);
+}
+
+/* Twinkling particle used for ambient anime sparkles */
+.anime-particle {
+  position: absolute;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.85);
+  animation: anime-twinkle 3.4s ease-in-out infinite;
+}
+
+/* Animated underline that grows from the centre */
+.anime-underline {
+  position: relative;
+}
+.anime-underline::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  height: 2px;
+  width: 0;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #FF6BAA, #3DE8F0, #34D399);
+  transform: translateX(-50%);
+  transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.anime-underline:hover::after,
+.anime-underline[data-active='true']::after {
+  width: 100%;
+}
+
+/* Hide scrollbars on horizontal rails while keeping scroll */
+.anime-scroll-x {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.anime-scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes anime-gradient-pan {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 300% 50%; }
+}
+
+@keyframes anime-sweep {
+  from { transform: translateX(-130%); }
+  to { transform: translateX(130%); }
+}
+
+@keyframes anime-skeleton {
+  0% { background-position: 180% 0; }
+  100% { background-position: -40% 0; }
+}
+
+@keyframes anime-twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(0.75); }
+  50% { opacity: 0.95; transform: scale(1.2); }
+}
+
 /* Accessibility: Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, ::before, ::after {
@@ -90,4 +222,81 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  /* Keep gradients readable even when animation is disabled */
+  .anime-text-gradient {
+    animation: none;
+    background-position: 0% 50%;
+  }
+  .anime-shimmer::after,
+  .skeleton-shimmer,
+  .skeleton-shimmer-dark {
+    animation: none;
+  }
+  .anime-lift:hover {
+    transform: none;
+  }
 }
+
+/* ========================================================= */
+/* SINHALA (සිංහල) TYPOGRAPHY SUPPORT                        */
+/* Sinhala is unicameral, ligature-rich and has taller        */
+/* ascenders/descenders than Latin, so letter-spacing and      */
+/* text-transform are neutralised and the whole font stack is  */
+/* swapped whenever <html data-lang="si"> is present.          */
+/* ========================================================= */
+
+html[data-lang='si'] body,
+html[data-lang='si'] .font-sans,
+html[data-lang='si'] .font-serif,
+html[data-lang='si'] .font-display {
+  /* Cinzel and Plus Jakarta Sans carry no Sinhala glyphs */
+  font-family: 'Noto Sans Sinhala', 'Plus Jakarta Sans', system-ui, sans-serif;
+}
+
+html[data-lang='si'] body {
+  line-height: 1.75;
+}
+
+/* Sinhala has no upper/lower case - transforms are meaningless. */
+html[data-lang='si'] .uppercase,
+html[data-lang='si'] .lowercase,
+html[data-lang='si'] .capitalize {
+  text-transform: none;
+}
+
+/* Tracking breaks Sinhala conjuncts (e.g. ක්‍ර, ශ්‍රී) so it is reset. */
+html[data-lang='si'] .tracking-tighter,
+html[data-lang='si'] .tracking-tight,
+html[data-lang='si'] .tracking-normal,
+html[data-lang='si'] .tracking-wide,
+html[data-lang='si'] .tracking-wider,
+html[data-lang='si'] .tracking-widest {
+  letter-spacing: 0;
+}
+
+/* Sinhala labels run longer than their English counterparts: keep them
+   wrapped and compact so nothing is clipped or misaligned. */
+html[data-lang='si'] h1,
+html[data-lang='si'] h2,
+html[data-lang='si'] h3,
+html[data-lang='si'] h4,
+html[data-lang='si'] h5 {
+  line-height: 1.35;
+}
+
+html[data-lang='si'] h1,
+html[data-lang='si'] h2,
+html[data-lang='si'] h3,
+html[data-lang='si'] h4,
+html[data-lang='si'] h5,
+html[data-lang='si'] button,
+html[data-lang='si'] a,
+html[data-lang='si'] label,
+html[data-lang='si'] li,
+html[data-lang='si'] p,
+html[data-lang='si'] span {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
