@@ -24,6 +24,7 @@ import { useProperties } from '../../context/PropertyContext';
 import { SRI_LANKA_DISTRICTS } from '../../constants/districts';
 import { PROPERTY_CATEGORIES } from '../../constants/categories';
 import { BRAND } from '../../constants/brand';
+import { validateImageFile } from '../../utils/imageValidation';
 
 export default function AddEditProperty() {
   const { id } = useParams();
@@ -101,14 +102,22 @@ export default function AddEditProperty() {
   const processFiles = async (files) => {
     if (!files || files.length === 0) return;
 
-    const fileList = Array.from(files).filter(f => f.type.startsWith('image/'));
+    const messages = [];
+    const fileList = Array.from(files).filter(f => {
+      const { valid, error } = validateImageFile(f);
+      if (!valid) {
+        messages.push(error);
+        return false;
+      }
+      return true;
+    });
     if (fileList.length === 0) {
-      setUploadError('Please select valid image files (JPG, PNG, WEBP).');
+      setUploadError(messages.join(' ') || 'Please select valid image files (JPG, PNG, WEBP).');
       return;
     }
 
     setUploadProgress({ active: true, current: 0, total: fileList.length });
-    setUploadError('');
+    setUploadError(messages.length > 0 ? messages.join(' ') : '');
 
     const newUploadedUrls = [];
 
@@ -751,17 +760,17 @@ export default function AddEditProperty() {
         </div>
 
         {/* Submit Actions */}
-        <div className="flex items-center justify-end space-x-3 pt-2">
+        <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 sm:gap-3 pt-2">
           <Link
             to="/admin"
-            className="px-6 py-3.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs uppercase tracking-wider transition-colors"
+            className="w-full sm:w-auto justify-center inline-flex items-center px-6 py-3.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold text-xs uppercase tracking-wider transition-colors"
           >
             Cancel
           </Link>
 
           <button
             type="submit"
-            className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-navy-950 font-bold text-xs uppercase tracking-wider shadow-glow-emerald hover:shadow-xl transition-all"
+            className="w-full sm:w-auto justify-center inline-flex items-center px-8 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-navy-950 font-bold text-xs uppercase tracking-wider shadow-glow-emerald hover:shadow-xl transition-all"
           >
             {isEditing ? 'Save Changes' : `Publish ${formData.category} Listing`}
           </button>

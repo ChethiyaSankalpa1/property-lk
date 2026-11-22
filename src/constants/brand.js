@@ -1,10 +1,10 @@
 export const BRAND = {
   name: "PROPERTY LK",
   tagline: "Sri Lanka's Premier Real Estate & Antiques Marketplace",
-  phone: "+94 77 660 0730",
-  phoneRaw: "+94776600730",
-  whatsappNumber: "94776600730",
-  whatsappUrl: "https://wa.me/94776600730",
+  phone: "+94 71 654 5457",
+  phoneRaw: "+94716545457",
+  whatsappNumber: "94716545457",
+  whatsappUrl: "https://wa.me/94716545457",
   email: "info@propertylk.com",
   location: "Colombo, Sri Lanka",
   currency: "LKR",
@@ -29,17 +29,32 @@ export const BRAND = {
     return `https://wa.me/${BRAND.whatsappNumber}?text=${encodeURIComponent(message)}`;
   },
 
-  // Helper for Sell Property inquiry
-  createSellPropertyLink: (formData) => {
-    const message = `*PROPERTY LK - SELL LISTING INQUIRY*\n\n` +
+  // Helper for Sell Property inquiry (optionally carries uploaded photo links + a listing reference)
+  createSellPropertyLink: (formData, options = {}) => {
+    const { imageUrls = [], referenceId = '', attachManually = false } = options;
+
+    let message = `*PROPERTY LK - SELL LISTING INQUIRY*\n`;
+    if (referenceId) {
+      message += `*Listing Ref:* ${referenceId}\n`;
+    }
+    message += `\n` +
       `*Full Name:* ${formData.fullName}\n` +
       `*WhatsApp:* ${formData.whatsappNumber}\n` +
       `*Item/Property Type:* ${formData.propertyType}\n` +
       `*District:* ${formData.district}\n` +
       `*Location/City:* ${formData.location}\n` +
       `*Expected Price (LKR):* ${formData.expectedPrice || 'Contact for Price'}\n` +
-      `*Description:* ${formData.description}\n\n` +
-      `Please contact me regarding listing this item.`;
+      `*Description:* ${formData.description}\n`;
+
+    if (imageUrls.length > 0) {
+      message += `\n*Property Photos (${imageUrls.length}) - Ref ${referenceId || 'n/a'}:*\n`;
+      message += imageUrls.map((url, index) => `${index + 1}. ${url}`).join('\n');
+      message += '\n';
+    } else if (attachManually) {
+      message += `\n*Property Photos:* I have photos to share and will attach them here in this chat.\n`;
+    }
+
+    message += `\nPlease contact me regarding listing this item.`;
     return `https://wa.me/${BRAND.whatsappNumber}?text=${encodeURIComponent(message)}`;
   },
 

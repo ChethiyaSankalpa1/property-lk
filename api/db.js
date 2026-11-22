@@ -1,11 +1,17 @@
 import { MongoClient } from 'mongodb';
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://chethiyasankalpa456_db_user:FVz2OxSzcN5ExIZz@cluster0.hwhei7q.mongodb.net/property_lk?retryWrites=true&w=majority";
+// Never hardcode credentials here. Set MONGODB_URI in the hosting environment
+// (e.g. Vercel Project Settings -> Environment Variables) or in a local .env file.
+const MONGODB_URI = process.env.MONGODB_URI;
 
 let cachedClient = null;
 let cachedDb = null;
 
 export async function connectToDatabase() {
+  if (!MONGODB_URI) {
+    throw new Error('MONGODB_URI is not configured. This project also works fully client-side without it.');
+  }
+
   if (cachedClient && cachedDb) {
     return { client: cachedClient, db: cachedDb };
   }

@@ -164,7 +164,7 @@ export default function PropertiesPage() {
               placeholder="Search by title, location, or Ref ID..."
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:outline-none focus:border-emerald-500 transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base sm:text-sm font-medium focus:outline-none focus:border-emerald-500 transition-colors"
             />
             {keyword && (
               <button 
@@ -194,7 +194,7 @@ export default function PropertiesPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-navy-950 focus:outline-none focus:border-emerald-500 cursor-pointer"
+                className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-base sm:text-sm font-semibold text-navy-950 focus:outline-none focus:border-emerald-500 cursor-pointer"
               >
                 <option value="newest">Newest First</option>
                 <option value="price-low">Price: Low to High</option>
@@ -397,7 +397,7 @@ export default function PropertiesPage() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="w-full max-w-xs sm:max-w-sm bg-white h-full p-6 flex flex-col justify-between overflow-y-auto"
+              className="w-full max-w-xs sm:max-w-sm bg-white h-full p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] flex flex-col justify-between overflow-y-auto"
             >
               <div className="space-y-6">
                 <div className="flex items-center justify-between border-b pb-4">
@@ -406,7 +406,8 @@ export default function PropertiesPage() {
                   </h3>
                   <button 
                     onClick={() => setMobileFilterOpen(false)}
-                    className="p-1 rounded-lg hover:bg-slate-100"
+                    className="p-2.5 rounded-lg hover:bg-slate-100"
+                    aria-label="Close filters"
                   >
                     <X className="w-5 h-5 text-slate-600" />
                   </button>

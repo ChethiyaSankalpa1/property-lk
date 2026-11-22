@@ -149,7 +149,7 @@ export default function AdminSettings() {
               placeholder="e.g. https://property-lk-backend.onrender.com (or leave empty to use Vercel default)"
               value={customBackend}
               onChange={(e) => setCustomBackend(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:outline-none focus:border-emerald-500"
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base sm:text-xs font-medium focus:outline-none focus:border-emerald-500"
             />
           </div>
 
@@ -235,7 +235,7 @@ export default function AdminSettings() {
                 placeholder="e.g. dxyz1234"
                 value={cloudName}
                 onChange={(e) => setCloudName(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:outline-none focus:border-emerald-500"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base sm:text-xs font-medium focus:outline-none focus:border-emerald-500"
               />
             </div>
 
@@ -248,7 +248,7 @@ export default function AdminSettings() {
                 placeholder="e.g. property_lk_unsigned"
                 value={uploadPreset}
                 onChange={(e) => setUploadPreset(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:outline-none focus:border-emerald-500"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base sm:text-xs font-medium focus:outline-none focus:border-emerald-500"
               />
             </div>
           </div>
@@ -383,7 +383,7 @@ export default function AdminSettings() {
               placeholder="Enter current password (default: admin123)"
               value={oldPin}
               onChange={(e) => setOldPin(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:outline-none focus:border-emerald-500"
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base sm:text-xs font-medium focus:outline-none focus:border-emerald-500"
             />
           </div>
 
@@ -397,7 +397,7 @@ export default function AdminSettings() {
               placeholder="At least 4 characters"
               value={newPin}
               onChange={(e) => setNewPin(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:outline-none focus:border-emerald-500"
+              className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-base sm:text-xs font-medium focus:outline-none focus:border-emerald-500"
             />
           </div>
 

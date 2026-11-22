@@ -17,7 +17,7 @@ import { PROPERTY_CATEGORIES } from '../../constants/categories';
 
 export default function Footer() {
   return (
-    <footer className="bg-navy-950 text-slate-300 border-t border-navy-800/80 pt-16 pb-12 relative overflow-hidden">
+    <footer className="bg-navy-950 text-slate-300 border-t border-navy-800/80 pt-16 pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-12 relative overflow-hidden">
       {/* Decorative ambient background glows */}
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-10 w-80 h-80 bg-navy-700/20 rounded-full blur-3xl pointer-events-none" />
@@ -39,7 +39,7 @@ export default function Footer() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
             <a
               href={BRAND.createWhatsAppLink()}
               target="_blank"
@@ -211,7 +211,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="mt-8 pt-6 border-t border-navy-800/60 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
           <p>© {new Date().getFullYear()} PROPERTY LK. All rights reserved. Sri Lanka Real Estate Marketplace.</p>
-          <div className="flex items-center space-x-6">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
             <Link to="/contact" className="hover:text-emerald-400 transition-colors">Privacy & Inquiries</Link>
             <Link to="/sell" className="hover:text-emerald-400 transition-colors">Listings Policy</Link>
             <Link to="/admin" className="hover:text-emerald-400 text-slate-400 transition-colors">Admin Access</Link>

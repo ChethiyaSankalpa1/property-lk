@@ -248,7 +248,7 @@ export default function PropertyDetailsPage() {
 
               {/* Thumbnails Row */}
               {images.length > 1 && (
-                <div className="p-3 bg-navy-900/90 border-t border-navy-800 flex items-center space-x-2.5 overflow-x-auto">
+                <div className="p-3 bg-navy-900/90 border-t border-navy-800 flex items-center space-x-2.5 overflow-x-auto [-webkit-overflow-scrolling:touch]">
                   {images.map((img, idx) => (
                     <button
                       key={idx}
@@ -445,7 +445,7 @@ export default function PropertyDetailsPage() {
 
           {/* Right Column: Sticky Contact & Inquiry Card */}
           <div className="lg:col-span-1">
-            <div className="sticky top-28 bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-card-luxury space-y-6">
+            <div className="sticky top-28 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-card-luxury space-y-6">
               
               <div className="flex items-center space-x-3 pb-4 border-b border-slate-100">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-emerald-400 flex items-center justify-center text-navy-950 shadow-glow-emerald">
@@ -541,11 +541,11 @@ export default function PropertyDetailsPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 backdrop-blur-md"
+            className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 backdrop-blur-md overflow-y-auto"
           >
             <button
               onClick={() => setLightboxOpen(false)}
-              className="absolute top-5 right-5 p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors z-20"
+              className="absolute top-5 right-5 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors z-20"
               aria-label="Close full-screen image viewer"
             >
               <X className="w-6 h-6" />

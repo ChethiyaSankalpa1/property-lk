@@ -7,7 +7,7 @@ export default function FloatingWhatsApp() {
   const [showTooltip, setShowTooltip] = useState(false);
 
   return (
-    <div className="fixed bottom-5 right-5 sm:bottom-6 sm:right-6 z-40 flex items-center">
+    <div className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-5 sm:bottom-[calc(1.5rem+env(safe-area-inset-bottom))] sm:right-6 z-40 flex items-center">
       {/* Tooltip on hover/active */}
       <AnimatePresence>
         {showTooltip && (
@@ -18,7 +18,7 @@ export default function FloatingWhatsApp() {
             className="hidden sm:flex items-center space-x-2 mr-3 bg-navy-950/95 text-white px-3.5 py-2 rounded-xl text-xs font-semibold shadow-2xl border border-emerald-500/30 backdrop-blur-md whitespace-nowrap"
           >
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span>Chat with PROPERTY LK: +94 77 660 0730</span>
+            <span>Chat with PROPERTY LK: {BRAND.phone}</span>
           </motion.div>
         )}
       </AnimatePresence>

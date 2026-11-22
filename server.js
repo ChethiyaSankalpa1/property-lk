@@ -17,12 +17,16 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://chethiyasankalpa456_db_user:FVz2OxSzcN5ExIZz@cluster0.hwhei7q.mongodb.net/property_lk?retryWrites=true&w=majority";
+// Never hardcode credentials here. Create a local .env file with MONGODB_URI=...
+const MONGODB_URI = process.env.MONGODB_URI;
 
 let dbClient = null;
 let db = null;
 
 async function initDb() {
+  if (!MONGODB_URI) {
+    throw new Error('MONGODB_URI is not configured. Add it to your .env file to use the optional database backend.');
+  }
   if (!db) {
     dbClient = new MongoClient(MONGODB_URI, {
       serverSelectionTimeoutMS: 5000,

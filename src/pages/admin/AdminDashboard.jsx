@@ -120,7 +120,7 @@ export default function AdminDashboard() {
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            className={`fixed top-4 right-4 z-50 flex items-center space-x-3 px-5 py-3.5 rounded-2xl shadow-2xl backdrop-blur-md border text-sm font-semibold ${
+            className={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 z-50 max-w-[calc(100vw-2rem)] sm:max-w-sm flex items-center space-x-3 px-5 py-3.5 rounded-2xl shadow-2xl backdrop-blur-md border text-sm font-semibold ${
               toast.type === 'success' 
                 ? 'bg-navy-950/95 text-white border-emerald-500/40' 
                 : 'bg-red-950/95 text-white border-red-500/40'
@@ -462,7 +462,7 @@ export default function AdminDashboard() {
                       <div className="flex items-center space-x-1.5">
                         <button
                           onClick={() => toggleFeatured(prop.id)}
-                          className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-semibold flex items-center space-x-1 transition-colors ${
+                          className={`px-3 py-2.5 rounded-lg border text-[11px] font-semibold flex items-center space-x-1 transition-colors ${
                             prop.isFeatured 
                               ? 'bg-amber-500 text-white border-amber-600' 
                               : 'bg-slate-100 text-slate-600'
@@ -474,7 +474,7 @@ export default function AdminDashboard() {
 
                         <button
                           onClick={() => toggleSold(prop.id)}
-                          className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-semibold flex items-center space-x-1 transition-colors ${
+                          className={`px-3 py-2.5 rounded-lg border text-[11px] font-semibold flex items-center space-x-1 transition-colors ${
                             prop.isSold 
                               ? 'bg-red-600 text-white border-red-700' 
                               : 'bg-slate-100 text-slate-600'
@@ -488,7 +488,7 @@ export default function AdminDashboard() {
                       <div className="flex items-center space-x-1.5">
                         <Link
                           to={`/admin/edit/${prop.id}`}
-                          className="p-2 rounded-lg bg-slate-100 text-navy-900 hover:bg-slate-200 border border-slate-200"
+                          className="p-2.5 rounded-lg bg-slate-100 text-navy-900 hover:bg-slate-200 border border-slate-200"
                           title="Edit"
                         >
                           <Edit className="w-3.5 h-3.5" />
@@ -496,14 +496,14 @@ export default function AdminDashboard() {
                         <Link
                           to={`/property/${prop.id}`}
                           target="_blank"
-                          className="p-2 rounded-lg bg-slate-100 text-emerald-600 hover:bg-emerald-50 border border-slate-200"
+                          className="p-2.5 rounded-lg bg-slate-100 text-emerald-600 hover:bg-emerald-50 border border-slate-200"
                           title="View Live"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
                         </Link>
                         <button
                           onClick={() => handleOpenDeleteModal(prop)}
-                          className="p-2 rounded-lg bg-red-50 text-red-600 border border-red-200 active:scale-95"
+                          className="p-2.5 rounded-lg bg-red-50 text-red-600 border border-red-200 active:scale-95"
                           title="Delete"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

@@ -105,7 +105,7 @@ export default function Navbar() {
                 title="Direct WhatsApp contact"
               >
                 <MessageCircle className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400/20" />
-                <span>+94 77 660 0730</span>
+                <span>{BRAND.phone}</span>
               </a>
 
               {/* Sell Property CTA */}
@@ -132,8 +132,9 @@ export default function Navbar() {
 
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-lg bg-navy-900/80 text-slate-200 border border-navy-800 hover:text-white focus:outline-none"
+                className="p-2.5 rounded-lg bg-navy-900/80 text-slate-200 border border-navy-800 hover:text-white focus:outline-none"
                 aria-label="Toggle mobile navigation menu"
+                aria-expanded={mobileMenuOpen}
               >
                 {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
@@ -151,7 +152,7 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-x-0 top-[60px] sm:top-[68px] z-40 bg-navy-950/98 backdrop-blur-xl border-b border-navy-800 shadow-2xl px-5 pt-4 pb-8 md:hidden"
+            className="fixed inset-x-0 top-[60px] sm:top-[68px] z-40 max-h-[calc(100dvh-60px)] sm:max-h-[calc(100dvh-68px)] overflow-y-auto overscroll-contain bg-navy-950/98 backdrop-blur-xl border-b border-navy-800 shadow-2xl px-5 pt-4 pb-[calc(2rem+env(safe-area-inset-bottom))] md:hidden"
           >
             <div className="flex flex-col space-y-3">
               <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold px-2">
